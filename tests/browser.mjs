@@ -101,6 +101,7 @@ async function clickEntity(id, leafOnly = false) {
 try {
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await ready(page);
+  await page.evaluate(() => window.plantinum.game.setCamera("free"));
   await page.waitForTimeout(1000);
   await page.screenshot({ path: "test-results/desktop.png" });
   console.log("Loaded desktop garden.");
@@ -271,6 +272,7 @@ try {
   mobile.on("pageerror", (e) => errors.push(e.message));
   await mobile.goto(url, { waitUntil: "domcontentloaded" });
   await ready(mobile);
+  await mobile.evaluate(() => window.plantinum.game.setCamera("free"));
   await mobile.locator("#dismiss-tutorial").click();
   await mobile.locator("#inventory-button").tap();
   await mobile.locator('[data-plant="tulip"]').tap();
@@ -286,8 +288,8 @@ try {
   );
   if (mobileCount === initial) {
     assert.ok(
-      await mobile.evaluate(() => !!window.plantinum.game.selected),
-      "Center action selects the object under the crosshair",
+      await mobile.evaluate(() => !!window.plantinum.game.selected || window.plantinum.game.pending?.ok === false),
+      "Center action selects an object or rejects an occupied planting spot",
     );
     const point = await mobile.evaluate(() => {
       const g = window.plantinum.game,

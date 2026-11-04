@@ -14,22 +14,7 @@ export class World {
     const v = [];
     const b = (x, y, z, sx, sy, sz, color) =>
       v.push({ x, y, z, sx, sy, sz, color });
-    // Continuous open meadow. Detail is streamed in reusable 24 m chunks.
-    b(0, -0.26, 0, 520, 0.6, 520, 0x9abe75);
-    b(0, 0.04, 0, 19.4, 0.22, 17.4, 0x789d55);
-    for (let x = -9; x < 9; x++)
-      for (let z = -8; z < 8; z++)
-        b(
-          x + 0.5,
-          0.16,
-          z + 0.5,
-          0.998,
-          0.06,
-          0.998,
-          (Math.floor((x + 9) / 3) + Math.floor((z + 8) / 3)) % 2
-            ? 0x9fc877
-            : 0xa4cc7b,
-        );
+    this.makeGround();
     // Warm limestone paths, intentionally split into slightly uneven slabs.
     const rng = random(77);
     for (let z = -8; z < 8; z++)
@@ -87,10 +72,50 @@ export class World {
     b(-13, 3.24, -9, 2.7, 0.25, 2.3, 0x8d9c77);
     b(-13, 0.99, -7.57, 1.0, 1.98, 0.08, 0x6f7754);
     b(-11.8, 1.5, -7.56, 0.65, 0.65, 0.07, 0xc6ded1);
+    for (const part of v) {
+      if (part.y > 0.18 && part.y < 0.25 && part.sx < 1.1 && part.sz < 1.1) {
+        part.geometry = "paving";
+        part.ry = (rng() - 0.5) * 0.18;
+        part.color = new THREE.Color(part.color).multiplyScalar(0.78).getHex();
+        part.sx *= 1.08;
+        part.sz *= 1.08;
+      }
+    }
     this.base = voxelMesh(v);
-    this.base.castShadow = false;
+    this.base.castShadow = true;
     scene.add(this.base);
     this.makeAnimals();
+  }
+  makeGround() {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 256;
+    const ctx = canvas.getContext("2d"), rng = random(761);
+    ctx.fillStyle = "#7c8c48";
+    ctx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 18000; i++) {
+      ctx.fillStyle = i % 3 ? "rgba(201,202,121,.12)" : "rgba(44,69,30,.12)";
+      ctx.fillRect(rng() * 256, rng() * 256, 1, 1 + rng() * 3);
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(120, 120);
+    const material = new THREE.MeshStandardMaterial({ map: texture, roughness: 1 });
+    this.groundMesh = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), material);
+    this.groundMesh.rotation.x = -Math.PI / 2;
+    this.groundMesh.position.y = 0.145;
+    this.groundMesh.receiveShadow = true;
+    this.scene.add(this.groundMesh);
+    this.pathBeds = [];
+    const stoneBed = new THREE.MeshStandardMaterial({ color: 0xaaa18a, roughness: 1 });
+    for (const [x, z, width, length] of [[-0.99, 0, 1.72, 16.1], [0, 1.56, 18.1, 1.42]]) {
+      const path = new THREE.Mesh(new THREE.PlaneGeometry(width, length), stoneBed);
+      path.rotation.x = -Math.PI / 2;
+      path.position.set(x, 0.19, z);
+      path.receiveShadow = true;
+      this.scene.add(path);
+      this.pathBeds.push(path);
+    }
   }
   stream(position) {
     const cx = Math.floor(position.x / CHUNK),
@@ -146,6 +171,7 @@ export class World {
       if (Math.abs(x) < 10 && Math.abs(z) < 9) continue;
       const h = 0.1 + rng() * 0.3;
       v.push({
+        geometry: "leaf",
         x,
         y: h / 2 + 0.1,
         z,
@@ -156,6 +182,7 @@ export class World {
       });
       if (i % 7 === 0)
         v.push({
+          geometry: "petal",
           x,
           y: h + 0.12,
           z,
@@ -174,7 +201,7 @@ export class World {
     const add = (kind, color, x, z, index) => {
       const body = [];
       const b = (x, y, z, sx, sy, sz, c = color) =>
-        body.push({ x, y, z, sx, sy, sz, color: c });
+        body.push({ x, y, z, sx, sy, sz, color: c, geometry: "crown" });
       if (kind === "rabbit" || kind === "squirrel") {
         b(0, 0.3, 0, 0.3, 0.32, 0.48);
         b(0, 0.53, -0.2, 0.25, 0.25, 0.24);
@@ -212,9 +239,10 @@ export class World {
         });
         for (const dir of [-1, 1]) {
           const wing = new THREE.Mesh(
-            new THREE.BoxGeometry(kind === "bird" ? 0.26 : 0.18, 0.025, 0.16),
+            new THREE.SphereGeometry(0.5, 6, 4),
             m,
           );
+          wing.scale.set(kind === "bird" ? 0.26 : 0.18, 0.025, 0.16);
           wing.position.x = dir * 0.13;
           wing.userData.dir = dir;
           group.add(wing);
@@ -292,6 +320,11 @@ export class World {
     this.chunkKey = "";
   }
   dispose() {
+    this.pathBeds.forEach((path) => path.geometry.dispose());
+    this.pathBeds[0]?.material.dispose();
+    this.groundMesh.geometry.dispose();
+    this.groundMesh.material.map.dispose();
+    this.groundMesh.material.dispose();
     this.chunks.forEach((m) => {
       this.scene.remove(m);
       m.dispose();

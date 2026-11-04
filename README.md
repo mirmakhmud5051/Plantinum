@@ -1,6 +1,6 @@
 # PLANTINUM 🌱
 
-Brauzerda ishlaydigan interaktiv 3D voxel bog‘dorchilik o‘yini. Three.js, JavaScript va Vite asosida yozilgan. Barcha o‘simlik va dekoratsiya modellari kod orqali yaratiladi; pullik assetlar va backend talab qilinmaydi.
+Brauzerda ishlaydigan, tabiiy barglar va yumaloq butalardan iborat interaktiv 3D bog‘dorchilik o‘yini. `images/` papkasidagi namuna asosida egri barglar, yaxlit daraxt tojlari, teksturali maysa va notekis tosh yo‘laklar yaratilgan. O‘yin inson ko‘zi balandligida — **1.68 m** dan boshlanadi. Three.js, JavaScript va Vite asosida yozilgan; modellar kod orqali yaratiladi, pullik assetlar va backend talab qilinmaydi.
 
 ## Ishga tushirish
 
@@ -24,11 +24,13 @@ Telefon yoki planshetni kompyuter bilan bir Wi-Fi tarmog‘iga ulang va terminal
 
 Interfeys standart holatda **o‘zbekcha**. **Sozlamalar → Til** orqali **O‘zbekcha / English** tanlanadi. Til almashtirilganda bog‘ va kamera saqlanadi, sahifa tanlangan tilda qayta ochiladi. Katalogdan o‘zbekcha yoki inglizcha nomlar bilan qidirish mumkin: masalan, **lola / tulip**, **qarag‘ay / pine**.
 
-1. **Play** tugmasini bosing, chap katalogdan o‘simlik tanlang.
+1. **O‘ynash** tugmasini bosing, chapdagi nihol tugmasidan katalogni ochib o‘simlik tanlang.
 2. Shaffof model bilan bo‘sh joyni belgilang va yerga bosing. Yashil ko‘rinish — ekish mumkin, qizil — boshqa joy tanlang. **R** modelni 90° aylantiradi.
-3. **Water** asbobini tanlang, o‘simlikka bosing. Yuqori o‘ngdagi **1×** tugmasi o‘sish tezligini **1× → 2× → 5× → 10×** o‘zgartiradi.
+3. **Sug‘orish** asbobini tanlang, o‘simlikka bosing. Yuqoridagi **1×** tugmasi o‘sish tezligini **1× → 2× → 5× → 10×** o‘zgartiradi.
 
-**Trim** bilan bargga bosilganda aynan urilgan voxel olib tashlanadi. **Shape** bilan shar, kub, piramida, konus, spiral yoki silindr tanlab, butaga bosing. Qirqilgan voxel identifikatorlari va topiary shakli saqlanadi.
+**Qirqish** bilan bargga bosilganda aynan urilgan barg yoki bargli qism olib tashlanadi. **Shakl** bilan shar, kub, piramida, konus, spiral yoki silindr tanlab, butaga bosing. Barg tahrirlari va topiary shakli saqlanadi.
+
+**WASD / joystik** bilan yuring, sudrab atrofga qarang. Scroll, zoom tugmalari va ikki barmoq bilan yaqinlashtirish birinchi shaxs ko‘rinishini saqlaydi. **C / Kamera** orqali yuqoridan ko‘rinishga o‘tish mumkin; **Uyga qaytish** yana bog‘ ichiga olib keladi. Avvalgi saqlangan bog‘lar yangi modellar bilan ochiladi.
 
 **Build** katalogidagi yo‘lak, panjara, chiroq, o‘rindiq, favvora, ko‘l, tosh, ko‘prik, guldon va haykalni ham ekish kabi joylashtiring. **Move** bilan obyektni olib, yangi joyga bosing. Tanlangan obyekt kartasidan sug‘orish, aylantirish, ko‘chirish va nusxa ekish mavjud.
 
@@ -46,7 +48,7 @@ Interfeys standart holatda **o‘zbekcha**. **Sozlamalar → Til** orqali **O‘
 | Ctrl/Cmd + Z                     | Oxirgi o‘zgarishni bekor qilish                         |
 | Esc                              | Ko‘chirishni bekor qilish / oynani yopish               |
 
-Mobil qurilmada chap joystick bilan harakatlaning, sahnani sudrab kamerani boshqaring, o‘ngdagi katta tugma bilan ekran markazida asbobni ishlating yoki kerakli joyga bevosita teging. Katalogni chapdagi nihol tugmasi ochadi. Portret va landscape ko‘rinishlar qo‘llanadi.
+Mobil qurilmada chap joystick bilan harakatlaning, sahnani sudrab kamerani boshqaring, o‘ngdagi katta tugma bilan ekran markazida asbobni ishlating yoki kerakli joyga bevosita teging. Katalogni chapdagi nihol tugmasi ochadi. Telefonni yonboshlatganda gorizontal joylashuv avtomatik yoqiladi: boshqaruvlar ikki chetda, asboblar pastda, kamera tugmalari yuqorida. Yuqoridagi **Gorizontal rejim** tugmasi brauzer qo‘llasa to‘liq ekranni va gorizontal yo‘nalishni yoqadi; aks holda telefonni qo‘lda aylantirish mumkin. Ekran aylanganda joystik tozalanadi va bog‘ saqlanib qoladi.
 
 ## Imkoniyatlar
 
@@ -54,7 +56,7 @@ Mobil qurilmada chap joystick bilan harakatlaning, sahnani sudrab kamerani boshq
 - Tahrirlash mumkin bo‘lgan daraxtzor, gullar xiyoboni, butalar labirinti, dam olish burchagi, ko‘l atrofi, ombor, o‘tloq va o‘rmon.
 - **28 o‘simlik turi**, **11 dekoratsiya**, 8 bog‘dorchilik asbobi.
 - Beshta o‘sish bosqichi, namlik, o‘sishni tezlashtiradigan sug‘orish va atrofdagi o‘simliklarga birgalikda suv beradigan shlang.
-- Birma-bir voxel qirqish va 6 tayyor topiary shakli; tahrirlar uchun 35 qadamli undo.
+- Alohida barglarni qirqish va 6 tayyor topiary shakli; tahrirlar uchun 35 qadamli undo.
 - Quyonlar, olmaxon, qo‘nib-uchadigan qushlar, kapalaklar va asalarilar.
 - Kun-tun almashinuvi, kechki chiroqlar, mayin shamol va suv zarralari.
 - Web Audio orqali dasturiy yaratilgan qush, shamol, suv, asbob tovushlari va sokin kuylar. Ovoz dastlab o‘chiq; **Garden sounds** bilan yoqing.
@@ -82,9 +84,9 @@ Saqlash shu brauzer, qurilma va sayt manziliga tegishli. Qurilmalar orasida avto
 
 Aniqlik qurilmaning pixel ratio qiymatidan oshmaydi. Qirralarni silliqlash barcha rejimlarda yoqilgan. Kuchli telefonda **Yuqori sifat** yoki **Ultra sifat** tanlanadi; avtomatik rejim ravonlik uchun bosqichma-bosqich pasayadi va sozlamadagi **Avtomatik** tanlovini saqlaydi. Dasturiy GPU aniqlanganda avtomatik rejim 0.65× aniqlikdagi yengil grafikadan boshlaydi. Telefonda ochish uchun bir Wi-Fi tarmog‘ida terminaldagi **Network** manzilidan foydalaning.
 
-- Bir xil kub geometriyasi va rangli `InstancedMesh` lar ishlatiladi.
+- Egri barglar, silliq tojlar, yumaloq yog‘och qismlar va notekis toshlar geometriya bo‘yicha `InstancedMesh` guruhlariga birlashtiriladi.
 - Atrof 24 × 24 m chunklar bo‘yicha bosqichma-bosqich yuklanadi; uzoqlashgan chunklar GPU xotirasidan chiqariladi.
-- Telefonda muvozanatli va yuqori rejimlar yaqin atrofni batafsil chizadi; ultra kengroq hududni yuklaydi. Yengil rejimda atrof daraxtlari soddalashtiriladi.
+- Telefonda muvozanatli va yuqori rejimlar yaqin atrofni batafsil chizadi; ultra kengroq hududni yuklaydi. Yengil rejimda uzoqdagi daraxtlarning barg detallari kamaytiriladi.
 - Frustum culling va masofaga ko‘ra obyekt ko‘rinishini cheklash mavjud.
 - Suv va qirqish zarralari obyekt poolidan qayta foydalanadi.
 - **Avtomatik** sozlamasi sekin kadrlar ketma-ketligini kuzatib grafikani pasaytiradi. **Sozlamalar → Grafika sifati** orqali qo‘lda tanlash mumkin.
@@ -108,6 +110,8 @@ $env:TEST_URL='http://127.0.0.1:5199'
 npm.cmd run test:e2e
 npm.cmd run test:lifecycle
 npm.cmd run test:preferences
+npm.cmd run test:landscape
+npm.cmd run test:natural
 ```
 
 Windowsda test mavjud Google Chrome’dan foydalanadi. Boshqa tizimda `npx playwright install chromium` bajariladi yoki `PLAYWRIGHT_CHROMIUM_EXECUTABLE` orqali Chromium manzili beriladi. `TEST_URL` belgilanmaganida test `http://localhost:5173` dan foydalanadi. Natijaviy skrinshotlar `test-results/` ga yoziladi.
@@ -122,6 +126,8 @@ src/
   game.js         Three.js sahnasi, kamera, raycasting va asboblar
   world.js        Chunk streaming, boshlang‘ich landshaft va hayvonlar
   voxels.js       Deterministik voxel modellari va topiary geometriyasi
+  botany.js       Egri barglar, gullar, daraxtlar va topiary qismlari
+  organic-mesh.js  Yumaloq geometriya, barg materiali va instancing
   catalog.js      O‘simlik, dekoratsiya va asbob ma’lumotlari
   state.js        Bog‘ formati, validatsiya, o‘sish va joylashuv qoidalari
   i18n.js         O‘zbekcha / English tarjimalar va lokalizatsiya

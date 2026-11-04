@@ -21,6 +21,8 @@ function setup(t) {
     mode: "walk",
     yaw: 0,
     pitch: 0,
+    walkZoom: 1,
+    resize() {},
     keys: new Set(),
     updatePointer(e) { this.lastPoint = [e.clientX, e.clientY]; },
     act() { actions.push(this.lastPoint); },
@@ -89,4 +91,16 @@ test("walking camera captures the pointer and capture loss cancels the action", 
   assert.equal(game.activePointers.size, 0);
   send("pointerup");
   assert.equal(actions.length, 0);
+});
+
+test("pinching the walking camera zooms without planting or changing eye height", (t) => {
+  const { send, game, actions } = setup(t);
+  send("pointerdown", 100, 100, 1);
+  send("pointerdown", 200, 100, 2);
+  send("pointermove", 250, 100, 2);
+  assert.ok(game.walkZoom < 1);
+  send("pointerup", 100, 100, 1);
+  send("pointerup", 250, 100, 2);
+  assert.equal(actions.length, 0);
+  assert.equal(game.touchPoints.size, 0);
 });

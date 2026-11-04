@@ -51,6 +51,9 @@ export function starterGarden() {
   add("rose", 3.5, -6);
   add("hosta", 4.5, -0.3);
   add("fern", 6.7, -0.2);
+  add("monstera", -2.7, 5.3);
+  add("fern", 0.65, 4.5);
+  add("hosta", -2.6, 2.8);
   add("pampas", 7.5, -4.2);
   add("daisy", -3, 6);
   add("pond", 5.6, -3.4);
@@ -93,7 +96,7 @@ export function starterGarden() {
     clock: 8.4,
     speed: 1,
     bounds: 48,
-    view: { target: [0, 0, 0], position: [23, 24, 29] },
+    view: { target: [0, 0, 0], position: [23, 24, 29], mode: "walk", walkPosition: [-0.9, 1.68, 6.5], yaw: 0, pitch: -0.12, styleVersion: 2 },
     settings: { quality: "auto", language: "uz", sound: false, volume: 0.35, dayCycle: true },
     tutorial: 0,
   };

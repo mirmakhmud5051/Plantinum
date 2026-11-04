@@ -34,6 +34,7 @@ try {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await ready(page);
+  await page.evaluate(() => window.plantinum.game.setCamera("free"));
   await page.locator("#dismiss-tutorial").click();
   await page.locator('[data-tool="hose"]').click();
   const target = await page.evaluate(() => {
@@ -204,6 +205,7 @@ try {
     distance: window.plantinum.game.camera.position.distanceTo(
       window.plantinum.game.controls.target,
     ),
+    fov: window.plantinum.game.camera.fov,
   }));
   const cdp = await mobileContext.newCDPSession(mobile);
   await cdp.send("Input.dispatchTouchEvent", {
@@ -229,11 +231,12 @@ try {
     distance: window.plantinum.game.camera.position.distanceTo(
       window.plantinum.game.controls.target,
     ),
+    fov: window.plantinum.game.camera.fov,
     pointers: window.plantinum.game.activePointers.size,
   }));
   assert.equal(after.count, before.count);
   assert.equal(after.pointers, 0);
-  assert.ok(Math.abs(after.distance - before.distance) > 0.1);
+  assert.ok(Math.abs(after.distance - before.distance) > 0.1 || Math.abs(after.fov - before.fov) > 0.1);
   await mobile.screenshot({ path: "test-results/mobile-pinch.png" });
   console.log(
     "Mobile world menu, expansion, and real two-finger pinch without accidental planting passed.",

@@ -402,7 +402,7 @@ export const TOOLS = [
     name: "Trim",
     icon: "scissors",
     key: 2,
-    hint: "Click the leaves to snip individual voxel blocks.",
+    hint: "Click the leaves to trim them individually.",
   },
   {
     id: "water",

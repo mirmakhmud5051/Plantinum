@@ -1,5 +1,12 @@
 // English phrases are stable translation keys; game/catalog identifiers stay unchanged.
 export const UZ = {
+  "Click the leaves to trim them individually.": "Alohida barglarni qirqish uchun ularga bosing.",
+  "Aim for a leaf to trim it.": "Qirqish uchun bargga bosing.",
+  "A fresh cut. Room for new growth.": "Barg qirqildi. Yangi novdalar uchun joy ochildi.",
+  "Interactive 3D garden. Click to plant. Drag to look around.": "Interaktiv 3D bog‘. Ekish uchun bosing. Atrofga qarash uchun sudrang.",
+  "Landscape mode": "Gorizontal rejim",
+  "Exit fullscreen": "To‘liq ekrandan chiqish",
+  "Turn your phone sideways for a wider garden view.": "Bog‘ni keng ko‘rish uchun telefonni yonboshlating.",
   "Plantinum — Your little green escape": "Plantinum — Sizning osuda bog‘ingiz",
   "YOUR LITTLE GREEN ESCAPE": "SIZNING YASHIL OSOYISHTALIGINGIZ",
   "My garden": "Mening bog‘im", "My Garden": "Mening bog‘im",

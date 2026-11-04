@@ -8,6 +8,8 @@ import { GardenAudio } from "./audio.js";
 import { GroundShadows } from "./ground-shadows.js";
 import { graphicsProfile, QUALITY_LEVELS } from "./graphics.js";
 import { t } from "./i18n.js";
+import { usesCompactLayout } from "./layout.js";
+export const EYE_HEIGHT = 1.68;
 
 export class GardenGame extends EventTarget {
   constructor(container, state) {
@@ -26,7 +28,7 @@ export class GardenGame extends EventTarget {
     this.moving = null;
     this.particles = [];
     this.joystick = { x: 0, y: 0 };
-    this.panelOpen = true;
+    this.panelOpen = false;
     this.paused = false;
     this.running = true;
     this.elapsed = 0;
@@ -51,13 +53,13 @@ export class GardenGame extends EventTarget {
     this.renderer.toneMappingExposure = 1.12;
     this.renderer.domElement.setAttribute(
       "aria-label",
-      t("Interactive 3D voxel garden. Click to plant. Drag to orbit."),
+      t("Interactive 3D garden. Click to plant. Drag to look around."),
     );
     this.renderer.domElement.tabIndex = 0;
     container.append(this.renderer.domElement);
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color("#c7dfce");
-    this.scene.fog = new THREE.Fog("#c7dfce", 45, 125);
+    this.scene.background = new THREE.Color("#e8e2c8");
+    this.scene.fog = new THREE.Fog("#e8e2c8", 28, 115);
     this.camera = new THREE.PerspectiveCamera(38, 1, 0.1, 260);
     this.camera.position.fromArray(state.view.position);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -125,16 +127,19 @@ export class GardenGame extends EventTarget {
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(container);
     this.resize();
-    if (state.view.mode === "walk") {
+    if (state.view.mode === "walk" || state.view.styleVersion !== 2) {
       this.setCamera("walk");
-      this.camera.position.fromArray(state.view.walkPosition);
+      if (state.view.mode === "walk" && state.view.walkPosition)
+        this.camera.position.fromArray(state.view.walkPosition);
       this.camera.position.set(
         clamp(this.camera.position.x, -state.bounds + 1, state.bounds - 1),
-        1.75,
+        EYE_HEIGHT,
         clamp(this.camera.position.z, -state.bounds + 1, state.bounds - 1),
       );
       this.yaw = Number(state.view.yaw) || 0;
-      this.pitch = clamp(Number(state.view.pitch) || 0, -1.35, 1.35);
+      this.pitch = clamp(Number.isFinite(state.view.pitch) ? state.view.pitch : -0.12, -1.35, 1.35);
+      this.walkZoom = clamp(Number.isFinite(state.view.walkZoom) ? state.view.walkZoom : 1, 0.65, 1.4);
+      this.resize();
     }
     this.clock = new THREE.Clock();
     this.lastChunk = 0;
@@ -165,11 +170,13 @@ export class GardenGame extends EventTarget {
     if (!w || !h) return;
     this.renderer.setSize(w, h);
     this.camera.aspect = w / h;
-    this.camera.fov = w / h < 0.8 ? 58 : 38;
+    this.camera.fov = this.mode === "walk"
+      ? Math.min(90, Math.max(40, (w < h ? 74 : 60) * (this.walkZoom || 1)))
+      : w / h < 0.8 ? 58 : 38;
     this.camera.setViewOffset(
       w,
       h,
-      this.panelOpen && w > 900 ? -145 : 0,
+      this.mode === "free" && this.panelOpen && !usesCompactLayout() ? -145 : 0,
       0,
       w,
       h,
@@ -253,6 +260,10 @@ export class GardenGame extends EventTarget {
     this.cancelMove();
     this.copyTemplate = null;
     this.plant = id;
+    if (this.mobile) {
+      this.pointer.set(0, 0);
+      this.pointerInside = true;
+    }
     this.setTool("plant");
     this.createGhost();
     this.emit("plant", id);
@@ -320,7 +331,7 @@ export class GardenGame extends EventTarget {
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const hits = this.raycaster.intersectObjects(
       [...this.meshes.values()].filter((m) => m.visible),
-      false,
+      true,
     );
     return hits[0];
   }
@@ -336,7 +347,7 @@ export class GardenGame extends EventTarget {
     this.pending = null;
     if (
       !(this.tool === "plant" || this.moving) ||
-      (!this.pointerInside && !matchMedia("(pointer:coarse)").matches)
+      !this.pointerInside
     ) {
       this.ghost.visible = false;
       this.ring.visible = false;
@@ -493,7 +504,7 @@ export class GardenGame extends EventTarget {
       }
       const voxel = hit.object.userData.voxels[hit.instanceId];
       if (!voxel?.leaf) {
-        this.emit("notice", "Aim for a leaf block to snip it away.");
+        this.emit("notice", "Aim for a leaf to trim it.");
         return;
       }
       this.snapshot();
@@ -501,7 +512,7 @@ export class GardenGame extends EventTarget {
       this.burst(hit.point, p.color, 9);
       this.rebuild(entity);
       this.audio.effect("trim");
-      this.emit("notice", "Snip! One little voxel at a time.");
+      this.emit("notice", "A fresh cut. Room for new growth.");
     } else if (this.tool === "shape") {
       if (
         !["bush", "hedge", "column", "conifer", "flowerbush"].includes(p.kind)
@@ -588,12 +599,13 @@ export class GardenGame extends EventTarget {
         position: this.camera.position.clone(),
         target: this.controls.target.clone(),
       };
-      this.camera.position.set(-0.9, 1.75, 6.5);
+      this.camera.position.set(-0.9, EYE_HEIGHT, 6.5);
       this.yaw = 0;
-      this.pitch = 0;
+      this.pitch = -0.12;
+      this.walkZoom = 1;
       this.controls.enabled = false;
       this.camera.rotation.order = "YXZ";
-      this.camera.rotation.set(0, 0, 0);
+      this.camera.rotation.set(this.pitch, 0, 0);
     } else {
       this.controls.enabled = true;
       this.camera.rotation.order = "XYZ";
@@ -603,6 +615,8 @@ export class GardenGame extends EventTarget {
       this.controls.target.copy(this.freeView?.target || new THREE.Vector3());
       this.controls.update();
     }
+    this.resize();
+    this.camera.updateMatrixWorld();
     this.emit("camera", mode);
     this.emit(
       "notice",
@@ -612,14 +626,20 @@ export class GardenGame extends EventTarget {
     );
   }
   home() {
-    if (this.mode === "walk") this.setCamera("free");
-    this.camera.position.set(23, 24, 29);
-    this.controls.target.set(0, 0, 0);
-    this.controls.update();
+    if (this.mode !== "walk") this.setCamera("walk");
+    this.camera.position.set(-0.9, EYE_HEIGHT, 6.5);
+    this.yaw = 0;
+    this.pitch = -0.12;
+    this.walkZoom = 1;
+    this.resize();
     this.emit("notice", "Home, sweet garden.");
   }
   zoom(factor) {
-    if (this.mode === "walk") this.setCamera("free");
+    if (this.mode === "walk") {
+      this.walkZoom = clamp((this.walkZoom || 1) * factor, 0.65, 1.4);
+      this.resize();
+      return;
+    }
     const offset = this.camera.position.clone().sub(this.controls.target);
     offset.multiplyScalar(factor);
     offset.clampLength(5, 80);
@@ -630,9 +650,16 @@ export class GardenGame extends EventTarget {
     const canvas = this.renderer.domElement;
     canvas.addEventListener("contextmenu", (e) => e.preventDefault());
     this.activePointers = new Set();
+    this.touchPoints = new Map();
     canvas.addEventListener("pointerdown", (e) => {
       this.activePointers.add(e.pointerId);
+      this.touchPoints.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (this.activePointers.size > 1) this.multiTouch = true;
+      if (this.mode === "walk" && this.touchPoints.size === 2) {
+        const [a, b] = [...this.touchPoints.values()];
+        this.pinchDistance = Math.hypot(a.x - b.x, a.y - b.y);
+        this.pinchZoom = this.walkZoom || 1;
+      }
       this.down = {
         x: e.clientX,
         y: e.clientY,
@@ -648,6 +675,16 @@ export class GardenGame extends EventTarget {
     });
     canvas.addEventListener("pointermove", (e) => {
       this.updatePointer(e);
+      if (this.touchPoints.has(e.pointerId))
+        this.touchPoints.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (this.mode === "walk" && this.multiTouch && this.touchPoints.size === 2) {
+        const [a, b] = [...this.touchPoints.values()];
+        const distance = Math.hypot(a.x - b.x, a.y - b.y);
+        if (distance > 1 && this.pinchDistance > 1) {
+          this.walkZoom = clamp(this.pinchZoom * this.pinchDistance / distance, 0.65, 1.4);
+          this.resize();
+        }
+      }
       if (
         this.down?.id === e.pointerId &&
         Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) >= 7
@@ -679,6 +716,7 @@ export class GardenGame extends EventTarget {
         this.act();
       }
       this.activePointers.delete(e.pointerId);
+      this.touchPoints.delete(e.pointerId);
       if (this.activePointers.size === 0) this.multiTouch = false;
       if (this.down?.id === e.pointerId) this.down = null;
       if (this.mode === "walk" && canvas.hasPointerCapture(e.pointerId))
@@ -686,11 +724,18 @@ export class GardenGame extends EventTarget {
     });
     const cancelPointer = (e) => {
       this.activePointers.delete(e.pointerId);
+      this.touchPoints.delete(e.pointerId);
       if (!this.activePointers.size) this.multiTouch = false;
       if (this.down?.id === e.pointerId) this.down = null;
     };
     canvas.addEventListener("pointercancel", cancelPointer);
     canvas.addEventListener("lostpointercapture", cancelPointer);
+    canvas.addEventListener("wheel", (e) => {
+      if (this.mode === "walk" && !this.paused) {
+        e.preventDefault();
+        this.zoom(Math.exp(e.deltaY * 0.001));
+      }
+    }, { passive: false });
     canvas.addEventListener("pointerleave", () => {
       this.pointerInside = false;
       this.down = null;
@@ -732,6 +777,7 @@ export class GardenGame extends EventTarget {
     this.onBlur = () => {
       this.keys.clear();
       this.activePointers.clear();
+      this.touchPoints.clear();
       this.multiTouch = false;
       this.down = null;
       this.pointerInside = false;
@@ -768,7 +814,7 @@ export class GardenGame extends EventTarget {
           -this.state.bounds + 1,
           this.state.bounds - 1,
         );
-        this.camera.position.y = 1.75;
+        this.camera.position.y = EYE_HEIGHT;
       }
     } else {
       if (side || forward) {
@@ -838,6 +884,7 @@ export class GardenGame extends EventTarget {
     }
     if (!this.paused) {
       this.moveCamera(dt);
+      this.camera.updateMatrixWorld();
       this.updateGhost();
       this.world.update(this.elapsed);
       this.growthTick += dt;
@@ -868,12 +915,12 @@ export class GardenGame extends EventTarget {
       day = Math.max(0.05, Math.sin(((hour - 6) / 12) * Math.PI)),
       dusk = hour > 16 && hour < 20;
     const sky = new THREE.Color(
-      hour < 6 || hour > 20 ? "#41586c" : dusk ? "#e5c7ab" : "#c7dfce",
+      hour < 6 || hour > 20 ? "#314957" : dusk ? "#efd2aa" : "#e8e2c8",
     );
     this.scene.background.lerp(sky, 0.02);
     this.scene.fog.color.copy(this.scene.background);
     this.hemi.intensity = 0.5 + day * 1.5;
-    this.sun.intensity = 0.15 + day * 3.4;
+    this.sun.intensity = 0.15 + day * 2.8;
     this.sun.color.set(dusk ? 0xffba86 : 0xffe9c5);
     this.sun.position.set(center.x - 15, 18 + day * 10, center.z + 14);
     this.sun.target.position.set(center.x, 0, center.z);
@@ -973,11 +1020,13 @@ export class GardenGame extends EventTarget {
         position: position.toArray(),
         target: target.toArray(),
         mode: this.mode,
+        styleVersion: 2,
         ...(this.mode === "walk"
           ? {
               walkPosition: this.camera.position.toArray(),
               yaw: this.yaw,
               pitch: this.pitch,
+              walkZoom: this.walkZoom || 1,
             }
           : {}),
       };

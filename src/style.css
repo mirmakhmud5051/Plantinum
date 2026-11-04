@@ -2937,6 +2937,383 @@ html[lang="uz"] .tool-button > span:last-child {
     font-size: 11px;
   }
 }
+.walking .scene-title {
+  display: none;
+}
+.walking .collection {
+  transform: translateX(calc(-100% - 40px));
+  transition: transform 0.25s;
+}
+.walking .collection.open {
+  transform: translateX(0);
+}
+.walking .collection-tabs .mobile-close {
+  display: grid;
+  flex: 0 0 30px;
+}
+.walking .mobile-inventory {
+  display: grid;
+  place-items: center;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 8;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid #fffdf6;
+  background: #fffdf3ed;
+  color: #628347;
+}
+.walking .tool-dock-wrap,
+.walking .shape-tray,
+.walking .toast {
+  left: 50%;
+}
+.walking .tool-dock-wrap {
+  max-width: calc(100% - 32px);
+}
+.walking .desktop-hints {
+  display: none;
+}
+@media (max-width: 900px) {
+  .walking .tool-dock-wrap {
+    max-width: calc(100% - 18px);
+  }
+}
+.orientation-button {
+  display: none;
+}
+@media (pointer: coarse) {
+  .header-actions .orientation-button {
+    display: inline-grid;
+  }
+}
+/* Phone landscape also covers 932px+ devices, with room around display cutouts. */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
+  #app {
+    height: 100dvh;
+    --landscape-left: max(12px, env(safe-area-inset-left));
+    --landscape-right: max(12px, env(safe-area-inset-right));
+    --landscape-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+  .header {
+    height: calc(44px + env(safe-area-inset-top));
+    min-height: calc(44px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) var(--landscape-right) 0 var(--landscape-left);
+    gap: 12px;
+  }
+  .brand {
+    font-size: 15px;
+    gap: 8px;
+  }
+  .brand-icon {
+    height: 29px;
+    width: 29px;
+    border-radius: 9px;
+  }
+  .brand-icon .icon {
+    height: 20px;
+    width: 20px;
+  }
+  .brand small,
+  .main-nav,
+  .save-state,
+  .save-button > span,
+  .scene-title,
+  .footer,
+  .garden-map,
+  .scene-bottom,
+  .tool-dock-label,
+  .tool-hint,
+  .tool-key {
+    display: none;
+  }
+  .header-actions {
+    margin-left: auto;
+    gap: 8px;
+  }
+  .header-actions .icon-button,
+  .header-actions .save-button {
+    height: 36px;
+    min-height: 36px;
+    min-width: 40px;
+    padding: 0;
+  }
+  .mobile-inventory,
+  .walking .mobile-inventory {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    z-index: 8;
+    left: var(--landscape-left);
+    top: 10px;
+    width: 44px;
+    height: 44px;
+    border: 1px solid #fffdf6;
+    border-radius: 12px;
+    background: #fffdf3ed;
+    color: #628347;
+    box-shadow: var(--shadow);
+  }
+  .mobile-inventory .icon {
+    height: 23px;
+    width: 23px;
+  }
+  .weather-card {
+    top: 10px;
+    right: auto;
+    left: calc(var(--landscape-left) + 54px);
+    height: 44px;
+    padding: 5px 7px;
+    gap: 6px;
+    border-radius: 11px;
+  }
+  .weather-card > div:nth-child(2) {
+    display: none;
+  }
+  .weather-icon {
+    width: 28px;
+    height: 28px;
+  }
+  .weather-card .time-button {
+    height: 32px;
+    width: 32px;
+    min-width: 32px;
+    margin: 0;
+    font-size: 11px;
+  }
+  .view-controls {
+    top: 10px;
+    right: var(--landscape-right);
+    flex-direction: row;
+    padding: 2px;
+    gap: 2px;
+  }
+  .view-controls .icon-button {
+    height: 38px;
+    min-width: 40px;
+  }
+  .view-controls .icon {
+    width: 18px;
+    height: 18px;
+  }
+  .view-controls .control-divider,
+  #fullscreen-button {
+    display: none;
+  }
+  .view-controls #home-button {
+    display: inline-grid;
+  }
+  .joystick {
+    left: var(--landscape-left);
+    bottom: var(--landscape-bottom);
+    width: 82px;
+    height: 82px;
+  }
+  .mobile-action,
+  html[lang="uz"] .mobile-action {
+    right: var(--landscape-right);
+    bottom: calc(var(--landscape-bottom) + 15px);
+    width: 120px;
+    height: 48px;
+    font-size: 11px;
+  }
+  .tool-dock-wrap,
+  .walking .tool-dock-wrap {
+    left: 50%;
+    bottom: var(--landscape-bottom);
+    width: max-content;
+    max-width: calc(100% - 240px - var(--landscape-left) - var(--landscape-right));
+  }
+  .tool-dock {
+    overflow-x: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    justify-content: flex-start;
+    gap: 2px;
+    padding: 5px 6px;
+  }
+  .tool-button,
+  .undo-button {
+    flex: 0 0 44px;
+    width: 44px;
+    min-width: 44px;
+    height: 54px;
+    min-height: 54px;
+    gap: 4px;
+  }
+  .tool-button > .icon {
+    height: 21px;
+    width: 21px;
+  }
+  .tool-button > span:last-child {
+    font-size: 8px;
+    white-space: normal;
+    line-height: 1.15;
+    text-align: center;
+  }
+  .shape-tray {
+    left: 50%;
+    bottom: calc(var(--landscape-bottom) + 76px);
+    width: max-content;
+    max-width: calc(100% - 180px - var(--landscape-left) - var(--landscape-right));
+    padding: 7px;
+  }
+  .shape-tray > span {
+    display: none;
+  }
+  .shape-tray > div {
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 0;
+    gap: 4px;
+  }
+  .shape-tray button {
+    min-height: 40px;
+    padding: 7px 10px;
+    font-size: 10px;
+  }
+  .selected-card {
+    top: 64px;
+    left: var(--landscape-left);
+    right: auto;
+    width: 218px;
+    max-height: calc(100% - 160px);
+    overflow-y: auto;
+    padding: 12px 10px 8px;
+  }
+  .selected-card > img {
+    width: 47px;
+    height: 52px;
+  }
+  .selected-info > strong {
+    font-size: 11px;
+  }
+  .selected-actions button {
+    height: 36px;
+  }
+  .tutorial {
+    top: 66px;
+    bottom: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    max-width: calc(100% - 200px);
+    max-height: calc(100% - 148px);
+    overflow-y: auto;
+    padding: 14px 18px;
+    animation: none;
+  }
+  .tutorial h3 {
+    font-size: 17px;
+    margin: 6px 0;
+  }
+  .tutorial p {
+    font-size: 10px;
+    margin: 8px 0;
+    line-height: 1.5;
+  }
+  .tutorial .text-button {
+    min-height: 36px;
+    font-size: 11px;
+  }
+  .collection {
+    z-index: 22;
+    top: 8px;
+    bottom: 8px;
+    left: var(--landscape-left);
+    width: clamp(250px, 32vw, 290px);
+    transform: translateX(calc(-100% - var(--landscape-left) - 12px));
+    transition: transform 0.25s;
+  }
+  .collection.open {
+    transform: translateX(0);
+  }
+  .collection-heading,
+  .collection-tip {
+    display: none;
+  }
+  .collection-tabs {
+    margin: 8px 8px 10px;
+    gap: 0;
+    padding: 3px;
+  }
+  .collection-tabs > button {
+    min-height: 38px;
+    font-size: 10px;
+    gap: 3px;
+  }
+  .collection-tabs .mobile-close {
+    display: grid;
+    flex: 0 0 30px;
+    min-width: 30px;
+  }
+  .search-wrap {
+    margin: 0 10px;
+    height: 36px;
+  }
+  .search-wrap input {
+    font-size: 16px;
+  }
+  .categories,
+  html[lang="uz"] .categories {
+    margin: 8px 10px 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 4px;
+    scrollbar-width: none;
+  }
+  .categories button {
+    flex: none;
+    min-height: 32px;
+    font-size: 9px;
+    padding: 5px 7px;
+  }
+  .inventory-meta {
+    margin: 8px 11px;
+  }
+  .plant-grid {
+    grid-auto-rows: 112px;
+    gap: 8px;
+    padding: 0 10px 10px;
+  }
+  .plant-card {
+    min-height: 112px;
+    padding-bottom: 7px;
+  }
+  .plant-image,
+  .plant-image img {
+    height: 66px;
+  }
+  .plant-image {
+    margin-bottom: 6px;
+  }
+  .plant-card > strong {
+    font-size: 10px;
+  }
+  .tools-grid {
+    grid-auto-rows: max-content;
+  }
+  .toast {
+    left: 50%;
+    top: 64px;
+    bottom: auto;
+    max-width: calc(100% - 180px - var(--landscape-left) - var(--landscape-right));
+    width: max-content;
+    font-size: 10px;
+    padding: 9px 12px;
+    pointer-events: none;
+  }
+  .modal {
+    width: min(640px, calc(100% - 30px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+    max-height: calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    padding: 26px 24px 20px;
+  }
+  .game-shell:has(.shape-tray:not(.hidden)) .selected-card {
+    display: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *:before,

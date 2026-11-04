@@ -10,7 +10,9 @@
     "test": "node --test tests/*.test.js",
     "test:e2e": "node tests/browser.mjs",
     "test:lifecycle": "node tests/lifecycle.mjs",
-    "test:preferences": "node tests/preferences.mjs"
+    "test:preferences": "node tests/preferences.mjs",
+    "test:landscape": "node tests/landscape.mjs",
+    "test:natural": "node tests/natural.mjs"
   },
   "keywords": [],
   "author": "",

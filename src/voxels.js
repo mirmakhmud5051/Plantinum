@@ -1,173 +1,10 @@
 import * as THREE from "three";
 import { byId } from "./catalog.js";
-export const BOX = new THREE.BoxGeometry(1, 1, 1);
-export const VOXEL_MATERIAL = new THREE.MeshLambertMaterial();
-export function random(seed) {
-  let n = seed | 0;
-  return () => {
-    n = (n + 0x6d2b79f5) | 0;
-    let t = Math.imul(n ^ (n >>> 15), 1 | n);
-    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-export function insideShape(shape, x, y, z) {
-  const r = Math.hypot(x, z);
-  switch (shape) {
-    case "sphere":
-      return x * x + (y * 2 - 1) ** 2 + z * z <= 1.12;
-    case "cube":
-      return Math.max(Math.abs(x), Math.abs(z), Math.abs(y * 2 - 1)) <= 0.86;
-    case "pyramid":
-      return Math.max(Math.abs(x), Math.abs(z)) <= 1 - y * 0.88;
-    case "cone":
-      return r <= 1 - y * 0.9;
-    case "cylinder":
-      return r <= 0.83;
-    case "spiral":
-      return (
-        r < 0.22 ||
-        (r < 0.82 && Math.cos(Math.atan2(z, x) - y * Math.PI * 5) > -0.08)
-      );
-    default:
-      return x * x + z * z + (y * 2 - 1) ** 2 <= 1.18;
-  }
-}
-export function plantVoxels(plant, seed = 17, shape = "natural") {
-  const rng = random(seed),
-    v = [];
-  const add = (x, y, z, sx, sy, sz, color, leaf = false) =>
-    v.push({ x, y, z, sx, sy, sz, color, leaf, id: v.length });
-  const shade = (color, amount = 0.16) =>
-    new THREE.Color(color)
-      .multiplyScalar(1 - amount / 2 + rng() * amount)
-      .getHex();
-  const { kind, height: h, width: w, color } = plant;
-  if (["flower", "lavender", "grass", "foliage"].includes(kind)) {
-    const n = kind === "flower" ? 5 : kind === "lavender" ? 19 : 13;
-    for (let i = 0; i < n; i++) {
-      const a = i * 2.39996,
-        r = Math.sqrt((i + 0.3) / n) * w * 0.43,
-        x = Math.cos(a) * r,
-        z = Math.sin(a) * r,
-        hh = h * (0.6 + rng() * 0.4);
-      if (kind === "foliage") {
-        add(x * 0.5, hh * 0.45, z * 0.5, 0.08, hh * 0.9, 0.08, 0x588442);
-        for (let j = 0; j < 4; j++)
-          add(
-            x * (0.4 + j * 0.22),
-            hh * (0.4 + j * 0.12),
-            z * (0.4 + j * 0.22),
-            w * 0.22,
-            0.11,
-            w * 0.17,
-            shade(color),
-            true,
-          );
-      } else {
-        add(x, hh * 0.46, z, 0.045, hh * 0.9, 0.045, 0x5e8f42);
-        if (kind === "grass") {
-          add(x, hh * 0.88, z, 0.11, hh * 0.38, 0.11, shade(color), true);
-        } else if (kind === "lavender") {
-          for (let j = 0; j < 3; j++)
-            add(
-              x,
-              hh * (0.72 + j * 0.15),
-              z,
-              0.12 - j * 0.02,
-              0.14,
-              0.12 - j * 0.02,
-              shade(color),
-              true,
-            );
-        } else {
-          const s = w * 0.16;
-          add(x, hh, z, s * 0.7, s * 0.8, s * 0.7, 0xe9bc4c, true);
-          [
-            [-1, 0],
-            [1, 0],
-            [0, -1],
-            [0, 1],
-          ].forEach(([dx, dz]) =>
-            add(
-              x + dx * s * 0.7,
-              hh - 0.015,
-              z + dz * s * 0.7,
-              s,
-              s * 0.55,
-              s,
-              shade(color),
-              true,
-            ),
-          );
-          add(x + 0.1, hh * 0.4, z, 0.24, 0.06, 0.1, 0x7aaa4e, true);
-        }
-      }
-    }
-    return v;
-  }
-  const isTree = ["tree", "pine"].includes(kind),
-    isConifer = ["conifer", "column"].includes(kind);
-  const base = isTree ? h * 0.36 : isConifer ? h * 0.09 : 0.12;
-  const trunkH = isTree ? h * 0.7 : isConifer ? h * 0.48 : h * 0.45;
-  add(
-    0,
-    trunkH / 2,
-    0,
-    isTree ? 0.29 : 0.13,
-    trunkH,
-    isTree ? 0.29 : 0.13,
-    0x957148,
-  );
-  if (isTree) {
-    add(-w * 0.13, h * 0.5, 0, w * 0.35, 0.17, 0.17, 0x957148);
-    add(w * 0.12, h * 0.57, 0.09, w * 0.3, 0.17, 0.17, 0xa27a4e);
-  }
-  const step = isTree ? 0.31 : isConifer ? 0.205 : 0.19;
-  const nx = Math.max(3, Math.round(w / step)),
-    ny = Math.max(3, Math.round((h - base) / step));
-  for (let iy = 0; iy < ny; iy++)
-    for (let ix = 0; ix < nx; ix++)
-      for (let iz = 0; iz < nx; iz++) {
-        const x = (ix - (nx - 1) / 2) * step,
-          z = (iz - (nx - 1) / 2) * step,
-          y = base + (iy + 0.5) * step;
-        const xx = x / (w * 0.5),
-          zz = z / (w * 0.5),
-          yy = iy / (ny - 1);
-        let keep;
-        if (shape !== "natural") keep = insideShape(shape, xx, yy, zz);
-        else if (kind === "hedge")
-          keep = Math.max(Math.abs(xx), Math.abs(zz)) < 0.95;
-        else if (kind === "column")
-          keep = xx * xx + zz * zz < (1 - Math.max(0, yy - 0.7) * 1.8) ** 2;
-        else if (isConifer || kind === "pine") {
-          const radius =
-            (1 - yy) * 0.96 + 0.1 + (Math.floor(yy * 5) % 2 === 0 ? 0.12 : 0);
-          keep =
-            Math.max(Math.abs(xx), Math.abs(zz)) < radius &&
-            Math.abs(xx) + Math.abs(zz) < radius * 1.65;
-        } else if (isTree) {
-          keep =
-            xx * xx + zz * zz + ((yy - 0.48) * 1.75) ** 2 < 0.94 + rng() * 0.11;
-          if (Math.abs(xx) > 0.7 && yy < 0.25) keep = false;
-        } else keep = insideShape("natural", xx, yy, zz);
-        if (!keep) continue;
-        // Flowering shrubs have green lower foliage and colored upper clusters.
-        const c = kind === "flowerbush" && yy < 0.55 ? "#64964a" : color;
-        add(
-          x,
-          y,
-          z,
-          step * 0.97,
-          step * 0.97,
-          step * 0.97,
-          shade(c, 0.23),
-          true,
-        );
-      }
-  return v;
-}
+import { plantVoxels } from "./botany.js";
+import { organicMesh, NATURAL_MATERIAL } from "./organic-mesh.js";
+export { random, insideShape, plantVoxels } from "./botany.js";
+export const BOX = new THREE.SphereGeometry(0.5, 6, 4);
+export const VOXEL_MATERIAL = NATURAL_MATERIAL;
 export function decorationVoxels(kind) {
   const v = [];
   const b = (x, y, z, sx, sy, sz, color) =>
@@ -300,6 +137,17 @@ export function decorationVoxels(kind) {
     [-0.12, 0.12].forEach((x) => b(x, 1.3, -0.16, 0.13, 0.49, 0.15, 0xe0dccb));
     b(0.23, 0.88, -0.29, 0.04, 0.06, 0.04, 0x64705d);
   }
+  for (const part of v) {
+    if (["rock", "stone-path"].includes(kind)) {
+      part.geometry = kind === "stone-path" ? "paving" : "stone";
+      part.ry = part.id * 2.399;
+    } else if (kind === "pond" || kind === "fountain") {
+      part.geometry = part.color === 0x7dbac3 || part.sy < 0.1 ? "crown" : "stone";
+      if (part.sy > 0.7 && part.sx < 0.5) part.geometry = "stem";
+    } else if (kind === "pot") part.geometry = "stem";
+    else if (kind === "statue" && part.y > 0.2) part.geometry = "crown";
+    else if (kind === "lamp" && part.sy > 1) part.geometry = "stem";
+  }
   return v;
 }
 export function entityVoxels(entity, { preview = false } = {}) {
@@ -318,27 +166,6 @@ export function entityVoxels(entity, { preview = false } = {}) {
         ((v.id * 17) % 101) / 101 < 0.25 + entity.growth * 0.75),
   );
 }
-export function voxelMesh(voxels, material = VOXEL_MATERIAL) {
-  const mesh = new THREE.InstancedMesh(
-      BOX,
-      material,
-      Math.max(1, voxels.length),
-    ),
-    dummy = new THREE.Object3D(),
-    color = new THREE.Color();
-  voxels.forEach((v, i) => {
-    dummy.position.set(v.x, v.y, v.z);
-    dummy.scale.set(v.sx, v.sy, v.sz);
-    dummy.updateMatrix();
-    mesh.setMatrixAt(i, dummy.matrix);
-    mesh.setColorAt(i, color.set(v.color));
-  });
-  mesh.count = voxels.length;
-  mesh.instanceMatrix.needsUpdate = true;
-  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  mesh.userData.voxels = voxels;
-  mesh.computeBoundingSphere();
-  return mesh;
+export function voxelMesh(parts, material = VOXEL_MATERIAL) {
+  return organicMesh(parts, material);
 }

@@ -3,8 +3,9 @@ import { icon } from "./icons.js";
 import { PLANTS, BUILDS, TOOLS, byId } from "./catalog.js";
 import { SAVE_KEY, starterGarden, validateSave, stage } from "./state.js";
 import { thumbnail } from "./thumbnails.js";
-import { GardenGame } from "./game.js";
+import { GardenGame, EYE_HEIGHT } from "./game.js";
 import { t, localizeHTML, setLanguage, getLanguage, normalizeSearch } from "./i18n.js";
+import { usesCompactLayout } from "./layout.js";
 
 const $ = (s, root = document) => root.querySelector(s),
   $$ = (s, root = document) => [...root.querySelectorAll(s)];
@@ -30,7 +31,7 @@ app.innerHTML = localizeHTML(`
  <header class="header">
   <button class="brand" id="menu-button" aria-label="Open Plantinum menu"><span class="brand-icon">${icon("leaf")}</span><span>PLANTINUM<small>YOUR LITTLE GREEN ESCAPE</small></span></button>
   <nav class="main-nav" aria-label="Main navigation"><button class="nav-button active" id="garden-nav">${icon("leaf")} My garden</button><button class="nav-button" id="world-nav">${icon("globe")} Explore the world</button></nav>
-  <div class="header-actions"><span class="save-state" id="save-status"><i></i> All changes saved</span><button class="button save-button" id="save-button">${icon("save")}<span>Save garden</span></button><button class="icon-button" id="settings-button" aria-label="Settings" title="Settings">${icon("settings")}</button></div>
+  <div class="header-actions"><button class="icon-button orientation-button" id="orientation-button" aria-label="Landscape mode" title="Landscape mode">${icon("landscape")}</button><span class="save-state" id="save-status"><i></i> All changes saved</span><button class="button save-button" id="save-button">${icon("save")}<span>Save garden</span></button><button class="icon-button" id="settings-button" aria-label="Settings" title="Settings">${icon("settings")}</button></div>
  </header>
  <main class="game-shell">
   <div id="scene" class="scene"></div>
@@ -133,7 +134,7 @@ function renderInventory() {
     ? list
         .map(
           (p) =>
-            `<button class="plant-card ${game?.plant === p.id ? "selected" : ""}" data-plant="${p.id}" aria-label="Choose ${p.name}" aria-pressed="${game?.plant === p.id}"><div class="plant-image"><img src="${thumbnail(p.id)}" alt="Voxel ${p.name}" draggable="false"/><span class="plant-add">${icon(game?.plant === p.id ? "check" : "plus")}</span></div><strong>${p.name}</strong><span>${p.category || "GARDEN DECOR"}</span></button>`,
+            `<button class="plant-card ${game?.plant === p.id ? "selected" : ""}" data-plant="${p.id}" aria-label="Choose ${p.name}" aria-pressed="${game?.plant === p.id}"><div class="plant-image"><img src="${thumbnail(p.id)}" alt="${p.name}" draggable="false"/><span class="plant-add">${icon(game?.plant === p.id ? "check" : "plus")}</span></div><strong>${p.name}</strong><span>${p.category || "GARDEN DECOR"}</span></button>`,
         )
         .join("")
     : `<div class="empty-state">${icon("search")}<strong>No little sprouts here.</strong><span>Try another name or category.</span></div>`);
@@ -173,7 +174,7 @@ function openCollection() {
 }
 function closeCollection() {
   $("#collection").classList.remove("open");
-  if (innerWidth <= 900) {
+  if (usesCompactLayout() || game.mode === "walk") {
     game.panelOpen = false;
     game.resize();
   }
@@ -490,7 +491,13 @@ function showWorld() {
   };
 }
 function travel(x, z) {
-  if (game.mode === "walk") game.setCamera("free");
+  if (game.mode === "walk") {
+    game.camera.position.set(x, EYE_HEIGHT, z + 3);
+    game.yaw = 0;
+    game.pitch = -0.12;
+    game.camera.updateMatrixWorld();
+    return;
+  }
   const delta = game.camera.position.clone().sub(game.controls.target);
   game.controls.target.set(x, 0, z);
   game.camera.position.copy(game.controls.target).add(delta);
@@ -534,6 +541,40 @@ async function setSound(on) {
   scheduleSave();
 }
 function bindUI() {
+  $("#orientation-button").onclick = async () => {
+    if (document.fullscreenElement) {
+      try {
+        screen.orientation?.unlock?.();
+        await document.exitFullscreen();
+      } catch {
+        toast("Full screen is unavailable in this browser.");
+      }
+      return;
+    }
+    try {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen)
+        await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+    } catch {
+      // Safari and embedded browsers can still use the responsive layout by rotating.
+    }
+    let locked = false;
+    try {
+      if (screen.orientation?.lock) {
+        await screen.orientation.lock("landscape");
+        locked = true;
+      }
+    } catch {
+      // Orientation locking is optional; physical rotation works independently.
+    }
+    if (!locked && !matchMedia("(orientation: landscape)").matches)
+      toast("Turn your phone sideways for a wider garden view.");
+    game.resize();
+  };
+  document.addEventListener("fullscreenchange", () => {
+    const label = t(document.fullscreenElement ? "Exit fullscreen" : "Landscape mode");
+    $("#orientation-button").setAttribute("aria-label", label);
+    $("#orientation-button").setAttribute("title", label);
+  });
   $("#plant-grid").onclick = (e) => {
     const card = e.target.closest("[data-plant]"),
       tool = e.target.closest("[data-catalog-tool]");
@@ -545,7 +586,7 @@ function bindUI() {
         scheduleSave();
       }
       renderInventory();
-      if (innerWidth <= 900) closeCollection();
+      if (usesCompactLayout() || game.mode === "walk") closeCollection();
     }
     if (tool) {
       game.setTool(tool.dataset.catalogTool);
@@ -570,7 +611,8 @@ function bindUI() {
     (b) =>
       (b.onclick = () => {
         game.setTool(b.dataset.tool);
-        if (b.dataset.tool === "plant" && innerWidth <= 900) openCollection();
+        if (b.dataset.tool === "plant" && (usesCompactLayout() || game.mode === "walk")) openCollection();
+        else if (usesCompactLayout() || game.mode === "walk") closeCollection();
       }),
   );
   $$("[data-shape]").forEach(
@@ -671,11 +713,17 @@ function bindUI() {
     nub.style.transform = `translate(${x * scale}px,${y * scale}px)`;
   }
   joy.onpointermove = moveJoystick;
-  joy.onpointerup = joy.onpointercancel = () => {
+  const resetJoystick = () => {
     joyPointer = null;
     game.joystick = { x: 0, y: 0 };
     nub.style.transform = "";
   };
+  joy.onpointerup = joy.onpointercancel = joy.onlostpointercapture = resetJoystick;
+  matchMedia("(orientation: landscape)").addEventListener("change", () => {
+    resetJoystick();
+    game.onBlur();
+    game.resize();
+  });
   $("#mobile-action").onclick = () => {
     game.pointer.set(0, 0);
     game.pointerInside = true;
@@ -723,6 +771,8 @@ async function boot() {
     });
     game.addEventListener("camera", (e) => {
       document.body.classList.toggle("walking", e.detail === "walk");
+      if (e.detail === "walk") closeCollection();
+      else if (!usesCompactLayout()) openCollection();
       $("#camera-button").innerHTML = localizeHTML(icon(
         e.detail === "walk" ? "walk" : "camera",
       ));
@@ -757,7 +807,7 @@ async function boot() {
     $("#loading").classList.add("hidden");
     setInterval(() => save(), 15000);
     if (loadError) toast(loadError);
-    if (innerWidth > 900) openCollection();
+    if (!usesCompactLayout() && game.mode !== "walk") openCollection();
   } catch (error) {
     console.error(error);
     $("#loading").innerHTML =

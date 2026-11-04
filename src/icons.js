@@ -1,4 +1,5 @@
 const paths = {
+  landscape: '<rect x="2" y="5" width="20" height="14" rx="3"/><path d="M18 10v4M7 9l-3 3 3 3m-3-3h9"/>',
   leaf: '<path d="M5 19C1 5 12 3 21 3c1 12-4 18-13 16M6 20l10-11"/>',
   sprout:
     '<path d="M12 21V11M12 14C4 15 3 9 3 6c7 0 10 3 9 8ZM12 11c-1-7 3-9 9-9 0 6-2 10-9 9Z"/>',
