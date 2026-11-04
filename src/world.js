@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { byId } from "./catalog.js";
-import { random, plantVoxels, decorationVoxels, voxelMesh } from "./voxels.js";
+import { random, plantVoxels, voxelMesh } from "./voxels.js";
+import { GardenLandscape } from "./garden-landscape.js";
 const CHUNK = 24;
 export class World {
   constructor(scene, low = false, radius = low ? 1 : 2) {
@@ -15,56 +16,8 @@ export class World {
     const b = (x, y, z, sx, sy, sz, color) =>
       v.push({ x, y, z, sx, sy, sz, color });
     this.makeGround();
-    // Warm limestone paths, intentionally split into slightly uneven slabs.
-    const rng = random(77);
-    for (let z = -8; z < 8; z++)
-      for (let x = 0; x < 2; x++)
-        b(
-          -1.4 + x * 0.79,
-          0.205,
-          z + 0.48,
-          0.76,
-          0.09,
-          0.95,
-          rng() > 0.45 ? 0xe2d6b7 : 0xd8cfb3,
-        );
-    for (let x = -9; x < 9; x++)
-      for (let z = 0; z < 2; z++)
-        b(
-          x + 0.48,
-          0.207,
-          1.22 + z * 0.68,
-          0.96,
-          0.09,
-          0.65,
-          rng() > 0.4 ? 0xe1d5b8 : 0xd8ceaf,
-        );
-    // Low wooden borders and generous entrances.
-    for (let x = -9.5; x <= 9.5; x += 1.9)
-      for (const z of [-8.7, 8.7]) {
-        if (Math.abs(x + 0.9) < 1.5) continue;
-        decorationVoxels("fence").forEach((q) =>
-          v.push({ ...q, x: q.x + x, y: q.y + 0.18, z: q.z + z }),
-        );
-      }
-    for (let z = -7.6; z <= 7.6; z += 1.9)
-      for (const x of [-9.6, 9.6]) {
-        if (Math.abs(z - 1.6) < 1.5) continue;
-        decorationVoxels("fence").forEach((q) =>
-          v.push({ ...q, x: q.z + x, y: q.y + 0.18, z: q.x + z }),
-        );
-      }
-    // Timber raised flower beds.
-    for (const [x, z, w, d] of [
-      [-5.25, 3.55, 3.7, 2.4],
-      [2.7, 3.65, 3.3, 2.25],
-    ]) {
-      b(x, 0.2, z, w, 0.1, d, 0x87684b);
-      for (const zz of [-d / 2, d / 2])
-        b(x, 0.31, z + zz, w + 0.16, 0.25, 0.12, 0xb29468);
-      for (const xx of [-w / 2, w / 2])
-        b(x + xx, 0.31, z, 0.12, 0.25, d, 0xa4845b);
-    }
+    this.garden = new GardenLandscape();
+    scene.add(this.garden);
     // A little garden shed in the neighboring meadow.
     b(-13, 1.3, -9, 3.6, 2.6, 2.8, 0xb79770);
     b(-13, 2.75, -9, 4.1, 0.3, 3.3, 0x6c8263);
@@ -72,19 +25,28 @@ export class World {
     b(-13, 3.24, -9, 2.7, 0.25, 2.3, 0x8d9c77);
     b(-13, 0.99, -7.57, 1.0, 1.98, 0.08, 0x6f7754);
     b(-11.8, 1.5, -7.56, 0.65, 0.65, 0.07, 0xc6ded1);
-    for (const part of v) {
-      if (part.y > 0.18 && part.y < 0.25 && part.sx < 1.1 && part.sz < 1.1) {
-        part.geometry = "paving";
-        part.ry = (rng() - 0.5) * 0.18;
-        part.color = new THREE.Color(part.color).multiplyScalar(0.78).getHex();
-        part.sx *= 1.08;
-        part.sz *= 1.08;
-      }
-    }
     this.base = voxelMesh(v);
     this.base.castShadow = true;
     scene.add(this.base);
+    this.makeBackdrop();
     this.makeAnimals();
+  }
+  makeBackdrop() {
+    const parts = [], rng = random(268);
+    // A soft woodland silhouette behind the privacy fence, like the reference.
+    for (let i = 0; i < 15; i++) {
+      const x = -27 + i * 3.9, z = -26 - rng() * 8;
+      const scale = 1.25 + rng() * 0.7;
+      plantVoxels(byId(i % 3 === 0 ? "pine" : "oak"), i * 137 + 71).forEach((part, j) => {
+        if (part.geometry === "leaf" && j % 4) return;
+        parts.push({ ...part, x: x + part.x * scale, y: 0.15 + part.y * scale, z: z + part.z * scale,
+          sx: part.sx * scale, sy: part.sy * scale, sz: part.sz * scale,
+          color: new THREE.Color(part.color).lerp(new THREE.Color(0x9caa7e), 0.35).getHex() });
+      });
+    }
+    this.backdrop = voxelMesh(parts);
+    this.backdrop.castShadow = false;
+    this.scene.add(this.backdrop);
   }
   makeGround() {
     const canvas = document.createElement("canvas");
@@ -106,17 +68,8 @@ export class World {
     this.groundMesh.position.y = 0.145;
     this.groundMesh.receiveShadow = true;
     this.scene.add(this.groundMesh);
-    this.pathBeds = [];
-    const stoneBed = new THREE.MeshStandardMaterial({ color: 0xaaa18a, roughness: 1 });
-    for (const [x, z, width, length] of [[-0.99, 0, 1.72, 16.1], [0, 1.56, 18.1, 1.42]]) {
-      const path = new THREE.Mesh(new THREE.PlaneGeometry(width, length), stoneBed);
-      path.rotation.x = -Math.PI / 2;
-      path.position.set(x, 0.19, z);
-      path.receiveShadow = true;
-      this.scene.add(path);
-      this.pathBeds.push(path);
-    }
   }
+
   stream(position) {
     const cx = Math.floor(position.x / CHUNK),
       cz = Math.floor(position.z / CHUNK),
@@ -320,8 +273,10 @@ export class World {
     this.chunkKey = "";
   }
   dispose() {
-    this.pathBeds.forEach((path) => path.geometry.dispose());
-    this.pathBeds[0]?.material.dispose();
+    this.garden.dispose();
+    this.scene.remove(this.garden, this.base, this.groundMesh, this.backdrop);
+    this.base.dispose();
+    this.backdrop.dispose();
     this.groundMesh.geometry.dispose();
     this.groundMesh.material.map.dispose();
     this.groundMesh.material.dispose();

@@ -162,6 +162,7 @@ export function entityVoxels(entity, { preview = false } = {}) {
     (v) =>
       !removed.has(v.id) &&
       (!v.leaf ||
+        v.geometry !== "leaf" ||
         entity.growth >= 0.95 ||
         ((v.id * 17) % 101) / 101 < 0.25 + entity.growth * 0.75),
   );

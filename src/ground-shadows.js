@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { byId } from "./catalog.js";
+import { gardenSurface } from "./garden-layout.js";
 
 // One draw call for gentle contact shadows, including on phones with shadow maps off.
 export class GroundShadows {
@@ -36,7 +37,7 @@ export class GroundShadows {
       const p = byId(e.type);
       if (!p.category) continue;
       const size = Math.max(0.45, p.width * (0.2 + e.growth * 0.8) * 1.25);
-      d.position.set(e.x, 0.201, e.z);
+      d.position.set(e.x, gardenSurface(e.x, e.z) + 0.012, e.z);
       d.scale.set(size, 1, size);
       d.updateMatrix();
       this.mesh.setMatrixAt(i++, d.matrix);

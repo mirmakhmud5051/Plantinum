@@ -9,6 +9,7 @@ import { GroundShadows } from "./ground-shadows.js";
 import { graphicsProfile, QUALITY_LEVELS } from "./graphics.js";
 import { t } from "./i18n.js";
 import { usesCompactLayout } from "./layout.js";
+import { BED_HEIGHT, bedAt, gardenSurface } from "./garden-layout.js";
 export const EYE_HEIGHT = 1.68;
 
 export class GardenGame extends EventTarget {
@@ -103,6 +104,8 @@ export class GardenGame extends EventTarget {
     this.pointer = new THREE.Vector2();
     this.ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.18);
     this.groundPoint = new THREE.Vector3();
+    this.bedPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -BED_HEIGHT);
+    this.bedPoint = new THREE.Vector3();
     this.pointerInside = false;
     this.selectionBox = new THREE.Box3Helper(new THREE.Box3(), 0xf5f1c7);
     this.selectionBox.visible = false;
@@ -214,7 +217,7 @@ export class GardenGame extends EventTarget {
     }
     const mesh = voxelMesh(entityVoxels(entity));
     mesh.userData.entityId = entity.id;
-    mesh.position.set(entity.x, 0.18, entity.z);
+    mesh.position.set(entity.x, gardenSurface(entity.x, entity.z), entity.z);
     mesh.rotation.y = entity.rotation;
     const scale = byId(entity.type).category?.length
       ? 0.2 + 0.8 * entity.growth
@@ -325,6 +328,8 @@ export class GardenGame extends EventTarget {
   }
   getGround() {
     this.raycaster.setFromCamera(this.pointer, this.camera);
+    const raised = this.bedPlane && this.raycaster.ray.intersectPlane(this.bedPlane, this.bedPoint);
+    if (raised && bedAt(raised.x, raised.z)) return this.groundPoint.copy(raised);
     return this.raycaster.ray.intersectPlane(this.ground, this.groundPoint);
   }
   entityHit() {
@@ -362,11 +367,11 @@ export class GardenGame extends EventTarget {
       z = Math.round(this.groundPoint.z * 2) / 2;
     const ok = this.canPlace(x, z);
     this.ghost.visible = true;
-    this.ghost.position.set(x, 0.18, z);
+    this.ghost.position.set(x, gardenSurface(x, z), z);
     this.ghost.rotation.y = this.rotation;
     this.ghost.material.color.set(ok ? 0xd2ffd0 : 0xf08075);
     this.ring.visible = true;
-    this.ring.position.set(x, 0.26, z);
+    this.ring.position.set(x, gardenSurface(x, z) + 0.055, z);
     this.ring.material.color.set(ok ? 0xfaf9d4 : 0xe87167);
     this.pending = { x, z, ok };
   }

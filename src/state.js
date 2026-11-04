@@ -1,5 +1,6 @@
 import { byId } from "./catalog.js";
 import { QUALITY_LEVELS } from "./graphics.js";
+import { GARDEN_LAYOUT_VERSION, REFERENCE_PLANTS, legacyStarterPlants, reservedGardenGround, bedAt } from "./garden-layout.js";
 export const SAVE_KEY = "plantinum-garden-v1";
 export const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 export function createEntity(
@@ -26,41 +27,7 @@ export function starterGarden() {
   const entities = [];
   const add = (type, x, z, growth = 1) =>
     entities.push(createEntity(type, x, z, growth, entities.length * 153 + 17));
-  add("sakura", -5.6, -4.5);
-  add("oak", 7.1, 4.8);
-  add("maple", -7, 5.3);
-  for (let i = 0; i < 5; i++) {
-    add("smaragd", -8, -6.3 + i * 2.7);
-    add("columna", 8, -6.3 + i * 2.7);
-  }
-  for (let i = 0; i < 4; i++) {
-    add("boxwood", -5.5 + i * 1.7, -7);
-    add("boxwood", 2 + i * 1.7, 6.8);
-  }
-  add("round-bush", -5.4, 0);
-  add("round-bush", -3.5, 0);
-  add("cube-bush", -7.4, 0);
-  for (let x = 0; x < 3; x++)
-    for (let z = 0; z < 2; z++) {
-      add("lavender", -6.3 + x * 1.1, 3 + z);
-      add("tulip", 1.8 + x * 0.9, 3 + z * 0.9);
-    }
-  add("hydrangea", -7.2, -2.4);
-  add("hydrangea", -3.3, -5.2);
-  add("rose", 2.3, -5.9);
-  add("rose", 3.5, -6);
-  add("hosta", 4.5, -0.3);
-  add("fern", 6.7, -0.2);
-  add("monstera", -2.7, 5.3);
-  add("fern", 0.65, 4.5);
-  add("hosta", -2.6, 2.8);
-  add("pampas", 7.5, -4.2);
-  add("daisy", -3, 6);
-  add("pond", 5.6, -3.4);
-  add("bench", -4.9, -1.9);
-  add("lamp", 0.2, -5.8);
-  add("lamp", 0.3, 5.7);
-  add("pot", -0.1, 7);
+  for (const [type, x, z, growth = 1] of REFERENCE_PLANTS) add(type, x, z, growth);
   // Neighboring destinations are editable gardens too, with the same persistence format.
   for (let i = 0; i < 3; i++)
     for (let j = 0; j < 3; j++)
@@ -92,6 +59,7 @@ export function starterGarden() {
   add("rock", 3.7, -21.5);
   return {
     version: 1,
+    gardenLayout: GARDEN_LAYOUT_VERSION,
     entities,
     clock: 8.4,
     speed: 1,
@@ -147,6 +115,7 @@ export function validateSave(input) {
         : [],
     };
   });
+  result.gardenLayout = input.gardenLayout === GARDEN_LAYOUT_VERSION ? GARDEN_LAYOUT_VERSION : 1;
   result.clock = Number.isFinite(input.clock)
     ? input.clock >= 0 && input.clock < 24
       ? input.clock
@@ -195,6 +164,48 @@ export function validateSave(input) {
   result.tutorial = Math.floor(clamp(Number(input.tutorial) || 0, 0, 4));
   return result;
 }
+export function upgradeGardenLayout(state) {
+  if (state.gardenLayout === GARDEN_LAYOUT_VERSION) return state;
+  const legacy = legacyStarterPlants();
+  const stock = state.entities.filter((entity) => legacy.some(([type, x, z], index) =>
+    entity.type === type && entity.seed === index * 153 + 17 &&
+    Math.abs(entity.x - x) < 0.001 && Math.abs(entity.z - z) < 0.001));
+  state.gardenLayout = GARDEN_LAYOUT_VERSION;
+  if (!stock.length) return state;
+  const fixed = state.entities.filter((entity) => !stock.includes(entity)), used = new Set();
+  const free = (x, z, type) => !fixed.some((entity) => Math.hypot(entity.x - x, entity.z - z) <
+    (entity.type === "pond" || type === "pond" ? 2.4 : 0.8));
+  // Only untouched starter locations move. Every specimen keeps its identity and edits.
+  for (const entity of stock) {
+    const index = REFERENCE_PLANTS.findIndex(([type, x, z], i) => !used.has(i) && type === entity.type && free(x, z, type));
+    if (index !== -1) {
+      [entity.x, entity.z] = REFERENCE_PLANTS[index].slice(1, 3);
+      used.add(index);
+    } else {
+      let location;
+      for (let z = 7; z >= -7 && !location; z -= 1.1)
+        for (let x = -7.5; x < 8; x += 1.1)
+          if (bedAt(x, z, 0.5) && free(x, z, entity.type) && !REFERENCE_PLANTS.some(([, px, pz]) => Math.hypot(px - x, pz - z) < 0.85)) {
+            location = [x, z]; break;
+          }
+      // Overflow specimens form a border outside the fence, never a discarded plant.
+      if (!location) for (let z = -7; z < state.bounds - 1; z += 1.7) {
+        if (free(-11, z, entity.type)) { location = [-11, z]; break; }
+      }
+      if (location) [entity.x, entity.z] = location;
+    }
+    fixed.push(entity);
+  }
+  REFERENCE_PLANTS.forEach(([type, x, z, growth = 1], index) => {
+    if (state.entities.length >= 5000) return;
+    if (used.has(index) || !free(x, z, type)) return;
+    // A type entirely removed or moved by the player isn't automatically restored.
+    if (legacy.some(([oldType]) => oldType === type) && !stock.some((entity) => entity.type === type)) return;
+    const entity = createEntity(type, x, z, growth, 100000 + index * 153);
+    state.entities.push(entity); fixed.push(entity);
+  });
+  return state;
+}
 export function advanceGrowth(entity, dt, speed = 1) {
   const p = byId(entity.type);
   if (!p.category) return false;
@@ -214,8 +225,7 @@ export function stage(growth) {
 }
 export function isPlaceable(x, z, entities, bounds, ignoreId) {
   if (Math.abs(x) > bounds - 1 || Math.abs(z) > bounds - 1) return false;
-  if (Math.abs(x + 0.9) < 0.85 && Math.abs(z) < 8) return false;
-  if (Math.abs(z - 1.6) < 0.75 && Math.abs(x) < 9) return false;
+  if (reservedGardenGround(x, z)) return false;
   return !entities.some(
     (e) =>
       e.id !== ignoreId &&

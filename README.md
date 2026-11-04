@@ -6,6 +6,12 @@ Brauzerda ishlaydigan, tabiiy barglar va yumaloq butalardan iborat interaktiv 3D
 
 Telefon yoki planshetni kompyuter bilan bir Wi-Fi tarmog‘iga ulang va terminaldagi **Network** manzilini telefon brauzerida oching. Kompyuterning mahalliy tarmoq uchun serverga kirishiga ruxsat bo‘lishi kerak. Joylashtirilgan saytga kiruvchi o‘yinchilarga Node.js yoki ilova o‘rnatish kerak emas.
 
+## Rasmdagi kabi bo?limlarga ajratilgan bog?
+
+`images/secnd.jpg` asosida 10 ta ko?tarilgan, yog?och hoshiyali gulzor, och rangli notekis ohaktosh yo?laklar, shag?alli yon yo?llar va past yog?och panjara qo?shildi. Butalar, paporotniklar, monstera va gullar alohida guruhlarga joylangan. Suv sepgich va o?ralgan shlang yo?lak chetidagi bezaklardir.
+
+Ko?rinadigan gulzor rejasi ekish qoidalari va xarita uchun ham ishlatiladi: tuproq yuzasiga ekiladi, yo?lak va yog?och chegaralar bo?sh qoladi. Eski boshlang?ich bog? yangi rejaga bir marta moslanadi; o?simlik ID, qirqish, namlik, aylanish va foydalanuvchi qo?shgan yoki ko?chirgan o?simliklar saqlanadi. Birinchi shaxs kamerasi va telefonning gorizontal boshqaruvi ishlaydi.
+
 ## Qanday o‘ynaladi
 
 Interfeys standart holatda **o‘zbekcha**. **Sozlamalar → Til** orqali **O‘zbekcha / English** tanlanadi. Til almashtirilganda bog‘ va kamera saqlanadi, sahifa tanlangan tilda qayta ochiladi. Katalogdan o‘zbekcha yoki inglizcha nomlar bilan qidirish mumkin: masalan, **lola / tulip**, **qarag‘ay / pine**.
@@ -105,6 +111,8 @@ Unit testlar katalog modellarini, saqlash formatini, noto‘g‘ri fayllarni, o�
 src/
   main.js         Interfeys, katalog, tutorial, menyu, sozlamalar va saqlash
   game.js         Three.js sahnasi, kamera, raycasting va asboblar
+  garden-layout.js  Umumiy gulzor rejasi, yo?laklar va boshlang?ich ko?chatlar
+  garden-landscape.js  Yog?och hoshiyalar, tuproq, shag?al va tosh yo?laklar
   world.js        Chunk streaming, boshlang‘ich landshaft va hayvonlar
   voxels.js       Deterministik voxel modellari va topiary geometriyasi
   botany.js       Egri barglar, gullar, daraxtlar va topiary qismlari

@@ -1,7 +1,8 @@
 import "./style.css";
 import { icon } from "./icons.js";
 import { PLANTS, BUILDS, TOOLS, byId } from "./catalog.js";
-import { SAVE_KEY, starterGarden, validateSave, stage } from "./state.js";
+import { SAVE_KEY, starterGarden, validateSave, upgradeGardenLayout, stage } from "./state.js";
+import { GARDEN_BEDS, GARDEN_EDGE, STONE_WALKS } from "./garden-layout.js";
 import { thumbnail } from "./thumbnails.js";
 import { GardenGame, EYE_HEIGHT } from "./game.js";
 import { t, localizeHTML, setLanguage, getLanguage, normalizeSearch } from "./i18n.js";
@@ -23,6 +24,7 @@ try {
     "Your previous save could not be read. Export or import a backup in Settings.";
 }
 state ??= starterGarden();
+upgradeGardenLayout(state);
 setLanguage(state.settings.language);
 document.documentElement.lang = getLanguage();
 document.title = t("Plantinum — Your little green escape");
@@ -297,11 +299,13 @@ function drawMap(canvas, range = 25) {
   const scale = Math.min(w, h) / (range * 2),
     ox = w / 2,
     oz = h / 2;
-  ctx.fillStyle = "#a8c88a";
-  ctx.fillRect(ox - 10 * scale, oz - 9 * scale, 20 * scale, 18 * scale);
-  ctx.fillStyle = "#e9dfbf";
-  ctx.fillRect(ox - 1.7 * scale, oz - 8 * scale, 1.6 * scale, 16 * scale);
-  ctx.fillRect(ox - 9 * scale, oz + 0.9 * scale, 18 * scale, 1.4 * scale);
+  const rect = (r) => ctx.fillRect(ox + r.x0 * scale, oz + r.z0 * scale, (r.x1 - r.x0) * scale, (r.z1 - r.z0) * scale);
+  ctx.fillStyle = "#c9bfa5";
+  rect(GARDEN_EDGE);
+  ctx.fillStyle = "#eee4cb";
+  STONE_WALKS.forEach(rect);
+  ctx.fillStyle = "#847453";
+  GARDEN_BEDS.forEach(rect);
   const dots = [
     [-16, -14],
     [-20, 9],
@@ -687,7 +691,7 @@ function bindUI() {
     try {
       if (file.size > 10_000_000)
         throw new Error("Please choose a garden file smaller than 10 MB.");
-      const imported = validateSave(JSON.parse(await file.text()));
+      const imported = upgradeGardenLayout(validateSave(JSON.parse(await file.text())));
       replaceGarden(imported);
     } catch (error) {
       toast(error instanceof SyntaxError ? "That garden file could not be opened." : error.message || "That garden file could not be opened.");

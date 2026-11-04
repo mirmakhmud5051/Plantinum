@@ -45,15 +45,15 @@ export function plantVoxels(plant, seed = 17, shape = "natural") {
       const count = fern ? 12 : monstera ? 8 : 14;
       for (let i = 0; i < count; i++) {
         const angle = i * 2.39996, length = h * (0.65 + rng() * 0.45);
-        const reach = w * (0.28 + rng() * 0.15), tx = Math.sin(angle) * reach, tz = Math.cos(angle) * reach;
-        const top = length * (monstera ? 0.8 : 0.5);
+        const reach = w * ((fern ? 0.38 : 0.28) + rng() * 0.15), tx = Math.sin(angle) * reach, tz = Math.cos(angle) * reach;
+        const top = length * (monstera ? 0.8 : fern ? 0.72 : 0.5);
         stem(0, 0.04, 0, tx, top, tz, 0.018);
         if (fern) {
           for (let j = 1; j <= 9; j++) {
-            const t = j / 10, size = Math.sin(Math.PI * t) * w * 0.22;
+            const t = j / 10, size = Math.sin(Math.PI * t) * w * 0.28;
             for (const side of [-1, 1]) {
               const a = angle + side * 0.85;
-              leaf(tx * t + Math.sin(a) * size * 0.35, top * Math.sin(t * 1.5), tz * t + Math.cos(a) * size * 0.35, size * 0.3, size, leafColor, a, -0.2);
+              leaf(tx * t + Math.sin(a) * size * 0.35, top * Math.sin(t * 1.5), tz * t + Math.cos(a) * size * 0.35, size * 0.4, size, leafColor, a, -0.2);
             }
           }
         } else if (monstera) {
@@ -76,7 +76,7 @@ export function plantVoxels(plant, seed = 17, shape = "natural") {
         }
       }
     } else {
-      const count = kind === "lavender" ? 21 : 7;
+      const count = kind === "lavender" ? 21 : ["rose", "wildflowers"].includes(plant.id) ? 19 : 7;
       for (let i = 0; i < count; i++) {
         const angle = i * 2.39996, r = Math.sqrt((i + 0.3) / count) * w * 0.38;
         const x = Math.cos(angle) * r, z = Math.sin(angle) * r, height = h * (0.6 + rng() * 0.4);
