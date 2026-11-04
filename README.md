@@ -2,21 +2,7 @@
 
 Brauzerda ishlaydigan interaktiv 3D voxel bog‘dorchilik o‘yini. Three.js, JavaScript va Vite asosida yozilgan. Barcha o‘simlik va dekoratsiya modellari kod orqali yaratiladi; pullik assetlar va backend talab qilinmaydi.
 
-## Ishga tushirish
 
-Node.js **20.19+ yoki 22.12+** kerak. Loyiha papkasida:
-
-```sh
-npm install
-npm run dev
-```
-
-Brauzerda terminal ko‘rsatgan manzilni oching, odatda **http://localhost:5173**. Agar PowerShell `npm.ps1` bajarilishini cheklasa, `npm` o‘rniga `npm.cmd` yozing:
-
-```powershell
-npm.cmd install
-npm.cmd run dev
-```
 
 Telefon yoki planshetni kompyuter bilan bir Wi-Fi tarmog‘iga ulang va terminaldagi **Network** manzilini telefon brauzerida oching. Kompyuterning mahalliy tarmoq uchun serverga kirishiga ruxsat bo‘lishi kerak. Joylashtirilgan saytga kiruvchi o‘yinchilarga Node.js yoki ilova o‘rnatish kerak emas.
 
@@ -93,22 +79,7 @@ Aniqlik qurilmaning pixel ratio qiymatidan oshmaydi. Qirralarni silliqlash barch
 
 ## Production va tekshiruv
 
-```sh
-npm test
-npm run build
-npm run preview -- --port 5199 --strictPort
-```
 
-Production fayllari `dist/` ichida. Shu papkani istalgan statik HTTPS hostingga joylashtirish mumkin. O‘yinni `file://` bilan ochmang; HTTP server kerak.
-
-Brauzer sinovlari uchun boshqa terminalda:
-
-```powershell
-$env:TEST_URL='http://127.0.0.1:5199'
-npm.cmd run test:e2e
-npm.cmd run test:lifecycle
-npm.cmd run test:preferences
-```
 
 Windowsda test mavjud Google Chrome’dan foydalanadi. Boshqa tizimda `npx playwright install chromium` bajariladi yoki `PLAYWRIGHT_CHROMIUM_EXECUTABLE` orqali Chromium manzili beriladi. `TEST_URL` belgilanmaganida test `http://localhost:5173` dan foydalanadi. Natijaviy skrinshotlar `test-results/` ga yoziladi.
 
