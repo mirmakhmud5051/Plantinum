@@ -22,6 +22,8 @@ Telefon yoki planshetni kompyuter bilan bir Wi-Fi tarmog‘iga ulang va terminal
 
 ## Qanday o‘ynaladi
 
+Interfeys standart holatda **o‘zbekcha**. **Sozlamalar → Til** orqali **O‘zbekcha / English** tanlanadi. Til almashtirilganda bog‘ va kamera saqlanadi, sahifa tanlangan tilda qayta ochiladi. Katalogdan o‘zbekcha yoki inglizcha nomlar bilan qidirish mumkin: masalan, **lola / tulip**, **qarag‘ay / pine**.
+
 1. **Play** tugmasini bosing, chap katalogdan o‘simlik tanlang.
 2. Shaffof model bilan bo‘sh joyni belgilang va yerga bosing. Yashil ko‘rinish — ekish mumkin, qizil — boshqa joy tanlang. **R** modelni 90° aylantiradi.
 3. **Water** asbobini tanlang, o‘simlikka bosing. Yuqori o‘ngdagi **1×** tugmasi o‘sish tezligini **1× → 2× → 5× → 10×** o‘zgartiradi.
@@ -68,12 +70,24 @@ Saqlash shu brauzer, qurilma va sayt manziliga tegishli. Qurilmalar orasida avto
 
 ## Grafik va ishlash tezligi
 
+**Sozlamalar → Grafika sifati** ichida beshta rejim bor:
+
+| Rejim | Tasvir aniqligi chegarasi | Soyalar |
+| --- | --- | --- |
+| Avtomatik | Telefonda muvozanatli, kompyuterda yuqori; zarur bo‘lsa pasayadi | Qurilmaga qarab |
+| Yengil va ravon | 1.25× | Yengil kontakt soyalari |
+| Muvozanatli | 1.75× | 1024 px mayin soyalar |
+| Yuqori sifat | 2.25× | 2048 px soyalar |
+| Ultra sifat | 3× | 2048 px soyalar va kengroq atrof |
+
+Aniqlik qurilmaning pixel ratio qiymatidan oshmaydi. Qirralarni silliqlash barcha rejimlarda yoqilgan. Kuchli telefonda **Yuqori sifat** yoki **Ultra sifat** tanlanadi; avtomatik rejim ravonlik uchun bosqichma-bosqich pasayadi va sozlamadagi **Avtomatik** tanlovini saqlaydi. Dasturiy GPU aniqlanganda avtomatik rejim 0.65× aniqlikdagi yengil grafikadan boshlaydi. Telefonda ochish uchun bir Wi-Fi tarmog‘ida terminaldagi **Network** manzilidan foydalaning.
+
 - Bir xil kub geometriyasi va rangli `InstancedMesh` lar ishlatiladi.
 - Atrof 24 × 24 m chunklar bo‘yicha bosqichma-bosqich yuklanadi; uzoqlashgan chunklar GPU xotirasidan chiqariladi.
-- Mobil qurilmalarda chunk radiusi, pixel ratio va soyalar kamayadi. Atrof daraxtlari soddalashtirilgan voxel detallari bilan chiziladi.
+- Telefonda muvozanatli va yuqori rejimlar yaqin atrofni batafsil chizadi; ultra kengroq hududni yuklaydi. Yengil rejimda atrof daraxtlari soddalashtiriladi.
 - Frustum culling va masofaga ko‘ra obyekt ko‘rinishini cheklash mavjud.
 - Suv va qirqish zarralari obyekt poolidan qayta foydalanadi.
-- **Automatic** sozlamasi sekin kadrlar ketma-ketligini kuzatib grafikani pasaytiradi. **Settings → Graphics quality** orqali qo‘lda tanlash mumkin.
+- **Avtomatik** sozlamasi sekin kadrlar ketma-ketligini kuzatib grafikani pasaytiradi. **Sozlamalar → Grafika sifati** orqali qo‘lda tanlash mumkin.
 
 30–60 FPS maqsad qilingan, lekin haqiqiy tezlik GPU, brauzer, ekran aniqligi va bog‘dagi obyektlar soniga bog‘liq. Fizik Android/iPhone qurilmalarida alohida tekshirish tavsiya etiladi. Lokal avtomatik testlar real telefonning ishlash tezligini kafolatlamaydi.
 
@@ -93,6 +107,7 @@ Brauzer sinovlari uchun boshqa terminalda:
 $env:TEST_URL='http://127.0.0.1:5199'
 npm.cmd run test:e2e
 npm.cmd run test:lifecycle
+npm.cmd run test:preferences
 ```
 
 Windowsda test mavjud Google Chrome’dan foydalanadi. Boshqa tizimda `npx playwright install chromium` bajariladi yoki `PLAYWRIGHT_CHROMIUM_EXECUTABLE` orqali Chromium manzili beriladi. `TEST_URL` belgilanmaganida test `http://localhost:5173` dan foydalanadi. Natijaviy skrinshotlar `test-results/` ga yoziladi.
@@ -109,6 +124,8 @@ src/
   voxels.js       Deterministik voxel modellari va topiary geometriyasi
   catalog.js      O‘simlik, dekoratsiya va asbob ma’lumotlari
   state.js        Bog‘ formati, validatsiya, o‘sish va joylashuv qoidalari
+  i18n.js         O‘zbekcha / English tarjimalar va lokalizatsiya
+  graphics.js     Mobil va desktop grafik sifat profillari
   audio.js        Web Audio atmosfera va asbob tovushlari
   thumbnails.js   Katalog uchun haqiqiy 3D modellarni tasvirga olish
   icons.js        SVG interfeys ikonkalari
@@ -116,6 +133,8 @@ src/
   style.css       Moslashuvchan desktop / mobile interfeys
 tests/
   input.test.js   Sudrash, bosish, fokus va sensorli boshqaruv regressiyalari
+  preferences.test.js  Tarjimalar, qidiruv va grafik sifat unit testlari
+  preferences.mjs  Til almashinuvi, bog‘ saqlanishi va grafik sifat brauzer sinovi
   state.test.js   Node.js unit testlari
   browser.mjs     Playwright interaktiv brauzer sinovlari
   lifecycle.mjs   Eksport/import, kamera, qolgan asboblar va pinch sinovlari

@@ -1,4 +1,5 @@
 import { byId } from "./catalog.js";
+import { QUALITY_LEVELS } from "./graphics.js";
 export const SAVE_KEY = "plantinum-garden-v1";
 export const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 export function createEntity(
@@ -93,7 +94,7 @@ export function starterGarden() {
     speed: 1,
     bounds: 48,
     view: { target: [0, 0, 0], position: [23, 24, 29] },
-    settings: { quality: "auto", sound: false, volume: 0.35, dayCycle: true },
+    settings: { quality: "auto", language: "uz", sound: false, volume: 0.35, dayCycle: true },
     tutorial: 0,
   };
 }
@@ -174,7 +175,9 @@ export function validateSave(input) {
   if (!Number.isFinite(result.view.yaw)) delete result.view.yaw;
   if (!Number.isFinite(result.view.pitch)) delete result.view.pitch;
   result.settings = { ...result.settings, ...input.settings };
-  result.settings.quality = ["auto", "low", "high"].includes(
+  result.settings.language = ["uz", "en"].includes(input.settings?.language)
+    ? input.settings.language : "uz";
+  result.settings.quality = QUALITY_LEVELS.includes(
     result.settings.quality,
   )
     ? result.settings.quality

@@ -6,6 +6,8 @@ import { BOX, entityVoxels, voxelMesh } from "./voxels.js";
 import { World } from "./world.js";
 import { GardenAudio } from "./audio.js";
 import { GroundShadows } from "./ground-shadows.js";
+import { graphicsProfile, QUALITY_LEVELS } from "./graphics.js";
+import { t } from "./i18n.js";
 
 export class GardenGame extends EventTarget {
   constructor(container, state) {
@@ -28,13 +30,10 @@ export class GardenGame extends EventTarget {
     this.paused = false;
     this.running = true;
     this.elapsed = 0;
-    this.low =
-      state.settings.quality === "low" ||
-      (state.settings.quality === "auto" &&
-        (matchMedia("(pointer: coarse)").matches ||
-          navigator.hardwareConcurrency <= 4));
+    this.mobile = matchMedia("(pointer: coarse)").matches;
+    this.autoQuality = null;
     this.renderer = new THREE.WebGLRenderer({
-      antialias: !this.low,
+      antialias: true,
       powerPreference: "high-performance",
       alpha: false,
     });
@@ -42,21 +41,17 @@ export class GardenGame extends EventTarget {
       debug = gl.getExtension("WEBGL_debug_renderer_info"),
       gpu = debug ? String(gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)) : "";
     this.software = /swiftshader|llvmpipe|software|microsoft basic/i.test(gpu);
-    if (state.settings.quality === "auto" && this.software) this.low = true;
-    this.renderer.setPixelRatio(
-      Math.min(
-        devicePixelRatio,
-        this.low ? (this.software ? 0.65 : 1.25) : 1.8,
-      ),
-    );
-    this.renderer.shadowMap.enabled = !this.low;
+    this.graphics = this.getGraphicsProfile();
+    this.low = this.graphics.low;
+    this.renderer.setPixelRatio(this.graphics.pixelRatio);
+    this.renderer.shadowMap.enabled = this.graphics.shadows;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.12;
     this.renderer.domElement.setAttribute(
       "aria-label",
-      "Interactive 3D voxel garden. Click to plant. Drag to orbit.",
+      t("Interactive 3D voxel garden. Click to plant. Drag to orbit."),
     );
     this.renderer.domElement.tabIndex = 0;
     container.append(this.renderer.domElement);
@@ -80,7 +75,7 @@ export class GardenGame extends EventTarget {
     this.sun = new THREE.DirectionalLight(0xffe9c5, 3.5);
     this.sun.position.set(-15, 26, 14);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(this.low ? 512 : 2048, this.low ? 512 : 2048);
+    this.sun.shadow.mapSize.setScalar(this.graphics.shadowSize);
     Object.assign(this.sun.shadow.camera, {
       left: -24,
       right: 24,
@@ -98,7 +93,7 @@ export class GardenGame extends EventTarget {
       this.scene.add(light);
       return light;
     });
-    this.world = new World(this.scene, this.low);
+    this.world = new World(this.scene, this.low, this.graphics.radius);
     state.entities.forEach((e) => this.rebuild(e));
     this.groundShadows = new GroundShadows(this.scene);
     this.groundShadows.update(state.entities);
@@ -161,6 +156,7 @@ export class GardenGame extends EventTarget {
   }
   emit(type, detail) {
     if (type === "change") this.groundShadows?.update(this.state.entities);
+    if (type === "notice" || type === "error") detail = t(detail);
     this.dispatchEvent(new CustomEvent(type, { detail }));
   }
   resize() {
@@ -803,23 +799,32 @@ export class GardenGame extends EventTarget {
       this.controls.update();
     }
   }
-  setQuality(value) {
-    this.state.settings.quality = value;
-    this.low =
-      value === "low" ||
-      (value === "auto" &&
-        (matchMedia("(pointer:coarse)").matches ||
-          navigator.hardwareConcurrency <= 4));
-    this.renderer.setPixelRatio(
-      Math.min(
-        devicePixelRatio,
-        this.low ? (this.software ? 0.65 : 1.25) : 1.8,
-      ),
+  getGraphicsProfile() {
+    return graphicsProfile(
+      this.state.settings.quality === "auto" && this.autoQuality
+        ? this.autoQuality : this.state.settings.quality,
+      { mobile: this.mobile, software: this.software, pixelRatio: devicePixelRatio },
     );
-    this.renderer.shadowMap.enabled = !this.low;
-    this.world.low = this.low;
-    this.world.chunkKey = "";
+  }
+  applyQuality() {
+    this.graphics = this.getGraphicsProfile();
+    this.low = this.graphics.low;
+    this.renderer.setPixelRatio(this.graphics.pixelRatio);
+    this.renderer.shadowMap.enabled = this.graphics.shadows;
+    if (this.sun.shadow.mapSize.x !== this.graphics.shadowSize) {
+      this.sun.shadow.map?.dispose();
+      this.sun.shadow.map = null;
+      this.sun.shadow.mapSize.setScalar(this.graphics.shadowSize);
+    }
+    this.renderer.shadowMap.needsUpdate = true;
+    this.world.setQuality(this.low, this.graphics.radius);
+    this.frameTimes.length = 0;
     this.resize();
+  }
+  setQuality(value) {
+    this.state.settings.quality = QUALITY_LEVELS.includes(value) ? value : "auto";
+    this.autoQuality = null;
+    this.applyQuality();
     this.emit("change");
   }
   frame() {
@@ -951,7 +956,8 @@ export class GardenGame extends EventTarget {
         this.frameTimes.length === 90 &&
         this.frameTimes.reduce((a, b) => a + b, 0) / 90 > 0.043
       ) {
-        this.setQuality("low");
+        this.autoQuality = this.graphics.level === "balanced" ? "low" : "balanced";
+        this.applyQuality();
         this.emit("notice", "Graphics adjusted for a smoother garden.");
       }
     }

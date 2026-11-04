@@ -3,9 +3,10 @@ import { byId } from "./catalog.js";
 import { random, plantVoxels, decorationVoxels, voxelMesh } from "./voxels.js";
 const CHUNK = 24;
 export class World {
-  constructor(scene, low = false) {
+  constructor(scene, low = false, radius = low ? 1 : 2) {
     this.scene = scene;
     this.low = low;
+    this.radius = radius;
     this.chunks = new Map();
     this.queue = [];
     this.animals = [];
@@ -94,10 +95,10 @@ export class World {
   stream(position) {
     const cx = Math.floor(position.x / CHUNK),
       cz = Math.floor(position.z / CHUNK),
-      key = `${cx},${cz},${this.low}`;
+      key = `${cx},${cz},${this.low},${this.radius}`;
     if (key === this.chunkKey) return;
     this.chunkKey = key;
-    const radius = this.low ? 1 : 2,
+    const radius = this.radius,
       wanted = new Set();
     for (let x = cx - radius; x <= cx + radius; x++)
       for (let z = cz - radius; z <= cz + radius; z++) {
@@ -127,7 +128,7 @@ export class World {
       const p = byId(i % 3 === 0 ? "pine" : i % 3 === 1 ? "oak" : "spruce"),
         s = 0.7 + rng() * 0.65;
       plantVoxels(p, Math.floor(rng() * 9999)).forEach((q, j) => {
-        if (q.leaf && j % 2 === 0) return;
+        if (this.low && q.leaf && j % 2 === 0) return;
         v.push({
           ...q,
           x: x + q.x * s,
@@ -276,6 +277,19 @@ export class World {
           );
       }
     });
+  }
+  setQuality(low, radius) {
+    if (this.low !== low) {
+      this.chunks.forEach((mesh) => {
+        this.scene.remove(mesh);
+        mesh.dispose();
+      });
+      this.chunks.clear();
+      this.queue = [];
+    }
+    this.low = low;
+    this.radius = radius;
+    this.chunkKey = "";
   }
   dispose() {
     this.chunks.forEach((m) => {

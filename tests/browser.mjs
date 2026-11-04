@@ -20,6 +20,7 @@ const context = await browser.newContext({
     viewport: { width: 1512, height: 982 },
   }),
   page = await context.newPage();
+await context.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
 page.setDefaultTimeout(20000);
 page.on("pageerror", (e) => errors.push(e.message));
 const ready = async (p) => {
@@ -266,6 +267,7 @@ try {
       deviceScaleFactor: 2,
     }),
     mobile = await mobileContext.newPage();
+  await mobileContext.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
   mobile.on("pageerror", (e) => errors.push(e.message));
   await mobile.goto(url, { waitUntil: "domcontentloaded" });
   await ready(mobile);

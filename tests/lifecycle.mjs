@@ -30,6 +30,7 @@ try {
     viewport: { width: 1280, height: 800 },
   });
   const page = await context.newPage();
+  await context.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await ready(page);
@@ -152,7 +153,7 @@ try {
       buffer: Buffer.from('{"version":2,"entities":[]}'),
     });
   await page.waitForFunction(() =>
-    document.querySelector("#toast").textContent.includes("not a supported"),
+    /not a supported|qo‘llab-quvvatlanmaydigan/.test(document.querySelector("#toast").textContent),
   );
   assert.equal(
     await page.evaluate(() => window.plantinum.state.entities.length),
@@ -183,6 +184,7 @@ try {
     hasTouch: true,
   });
   const mobile = await mobileContext.newPage();
+  await mobileContext.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
   mobile.on("pageerror", (e) => errors.push(e.message));
   async function tap(selector) {
     const rect = await mobile.locator(selector).boundingBox();

@@ -2909,6 +2909,34 @@ kbd {
     gap: 14px;
   }
 }
+/* Longer Uzbek labels keep their tap targets and wrap within the toolbar. */
+html[lang="uz"] .collection-heading h1 {
+  white-space: normal;
+  text-wrap: balance;
+}
+html[lang="uz"] .categories {
+  flex-wrap: wrap;
+}
+html[lang="uz"] .tool-button > span:last-child {
+  max-width: 100%;
+  text-align: center;
+  line-height: 1.2;
+  white-space: normal;
+}
+.settings-list label > span {
+  flex: 1;
+  min-width: 0;
+}
+.settings-list select {
+  flex-shrink: 0;
+  max-width: 46%;
+}
+@media (max-width: 900px) {
+  html[lang="uz"] .mobile-action {
+    width: 132px;
+    font-size: 11px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *:before,

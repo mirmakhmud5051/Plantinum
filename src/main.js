@@ -4,6 +4,7 @@ import { PLANTS, BUILDS, TOOLS, byId } from "./catalog.js";
 import { SAVE_KEY, starterGarden, validateSave, stage } from "./state.js";
 import { thumbnail } from "./thumbnails.js";
 import { GardenGame } from "./game.js";
+import { t, localizeHTML, setLanguage, getLanguage, normalizeSearch } from "./i18n.js";
 
 const $ = (s, root = document) => root.querySelector(s),
   $$ = (s, root = document) => [...root.querySelectorAll(s)];
@@ -21,8 +22,11 @@ try {
     "Your previous save could not be read. Export or import a backup in Settings.";
 }
 state ??= starterGarden();
+setLanguage(state.settings.language);
+document.documentElement.lang = getLanguage();
+document.title = t("Plantinum — Your little green escape");
 const app = $("#app");
-app.innerHTML = `
+app.innerHTML = localizeHTML(`
  <header class="header">
   <button class="brand" id="menu-button" aria-label="Open Plantinum menu"><span class="brand-icon">${icon("leaf")}</span><span>PLANTINUM<small>YOUR LITTLE GREEN ESCAPE</small></span></button>
   <nav class="main-nav" aria-label="Main navigation"><button class="nav-button active" id="garden-nav">${icon("leaf")} My garden</button><button class="nav-button" id="world-nav">${icon("globe")} Explore the world</button></nav>
@@ -55,7 +59,7 @@ app.innerHTML = `
  <footer class="footer"><span>${icon("leaf")} GROW AT YOUR OWN PACE.</span><span>A small garden. An infinite kind of happy.</span><span>Made for a slower moment ${icon("heart")}</span></footer>
  <dialog class="modal" id="modal"><button class="modal-close icon-button" id="modal-close" aria-label="Close dialog">${icon("close")}</button><div id="modal-body"></div></dialog>
  <input type="file" id="import-file" accept="application/json,.json" hidden />
-`;
+`);
 let game,
   panel = "plants",
   category = "All",
@@ -65,8 +69,8 @@ let game,
   replacingGarden = false;
 function toast(message) {
   const el = $("#toast");
-  el.innerHTML = `${icon("leaf")}<span></span>`;
-  $("span", el).textContent = message;
+  el.innerHTML = localizeHTML(`${icon("leaf")}<span></span>`);
+  $("span", el).textContent = t(message);
   el.classList.remove("hidden");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.add("hidden"), 3600);
@@ -77,18 +81,20 @@ function save(announce = false) {
     game.captureView();
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
     lastSaved = Date.now();
-    $("#save-status").innerHTML = "<i></i> All changes saved";
+    $("#save-status").innerHTML = localizeHTML("<i></i> All changes saved");
     if (announce) toast("Your little sanctuary is safely saved.");
+    return true;
   } catch {
-    $("#save-status").textContent = "Save unavailable";
+    $("#save-status").textContent = t("Save unavailable");
     toast(
       "Your browser could not save the garden. Export a backup in Settings.",
     );
+    return false;
   }
 }
 function scheduleSave() {
   clearTimeout(saveTimer);
-  $("#save-status").innerHTML = '<i class="saving"></i> Saving your garden…';
+  $("#save-status").innerHTML = localizeHTML('<i class="saving"></i> Saving your garden…');
   saveTimer = setTimeout(() => save(), 800);
 }
 function replaceGarden(nextGarden) {
@@ -99,19 +105,19 @@ function replaceGarden(nextGarden) {
   location.reload();
 }
 function renderInventory() {
-  const query = $("#search").value.toLowerCase().trim(),
+  const query = normalizeSearch($("#search").value),
     grid = $("#plant-grid");
   if (panel === "tools") {
     grid.className = "plant-grid tools-grid";
-    grid.innerHTML = TOOLS.filter((t) =>
-      `${t.name} ${t.hint}`.toLowerCase().includes(query),
+    grid.innerHTML = localizeHTML(TOOLS.filter((tool) =>
+      normalizeSearch(`${tool.name} ${tool.hint} ${t(tool.name)} ${t(tool.hint)}`).includes(query),
     )
       .map(
         (t) =>
           `<button class="tool-catalog-item ${game?.tool === t.id ? "selected" : ""}" data-catalog-tool="${t.id}"><span class="tool-catalog-icon">${icon(t.icon)}</span><span><strong>${t.name}</strong><small>${t.hint}</small></span><kbd>${t.key}</kbd></button>`,
       )
-      .join("");
-    $("#inventory-count").textContent = "8 tools, plenty of possibilities";
+      .join(""));
+    $("#inventory-count").textContent = t("8 tools, plenty of possibilities");
     return;
   }
   grid.className = "plant-grid";
@@ -119,18 +125,18 @@ function renderInventory() {
     list = all.filter(
       (p) =>
         (panel === "build" || category === "All" || p.category === category) &&
-        p.name.toLowerCase().includes(query),
+        normalizeSearch(`${p.name} ${t(p.name)}`).includes(query),
     );
   $("#inventory-count").textContent =
-    `${list.length} ${panel === "plants" ? "plants" : "objects"} to discover`;
-  grid.innerHTML = list.length
+    t(`${list.length} ${panel === "plants" ? "plants" : "objects"} to discover`);
+  grid.innerHTML = localizeHTML(list.length
     ? list
         .map(
           (p) =>
             `<button class="plant-card ${game?.plant === p.id ? "selected" : ""}" data-plant="${p.id}" aria-label="Choose ${p.name}" aria-pressed="${game?.plant === p.id}"><div class="plant-image"><img src="${thumbnail(p.id)}" alt="Voxel ${p.name}" draggable="false"/><span class="plant-add">${icon(game?.plant === p.id ? "check" : "plus")}</span></div><strong>${p.name}</strong><span>${p.category || "GARDEN DECOR"}</span></button>`,
         )
         .join("")
-    : `<div class="empty-state">${icon("search")}<strong>No little sprouts here.</strong><span>Try another name or category.</span></div>`;
+    : `<div class="empty-state">${icon("search")}<strong>No little sprouts here.</strong><span>Try another name or category.</span></div>`);
 }
 function setPanel(next) {
   panel = next;
@@ -140,23 +146,23 @@ function setPanel(next) {
   $("#categories").classList.toggle("hidden", next !== "plants");
   $("#search").value = "";
   $("#collection-title").innerHTML =
-    next === "plants"
+    localizeHTML(next === "plants"
       ? "Meet your new plants<span>.</span>"
       : next === "build"
         ? "Make yourself at home<span>.</span>"
-        : "A little garden magic<span>.</span>";
+        : "A little garden magic<span>.</span>");
   $("#collection-eyebrow").textContent =
-    next === "plants"
+    t(next === "plants"
       ? "A LITTLE SOMETHING GREEN"
       : next === "build"
         ? "THE FINISHING TOUCHES"
-        : "GOOD THINGS TAKE A LITTLE CARE";
+        : "GOOD THINGS TAKE A LITTLE CARE");
   $("#collection-description").textContent =
-    next === "plants"
+    t(next === "plants"
       ? "Big dreams start with little seeds."
       : next === "build"
         ? "Make a place you love coming back to."
-        : "Everything you need to help it grow.";
+        : "Everything you need to help it grow.");
   renderInventory();
   openCollection();
 }
@@ -178,10 +184,10 @@ function updateTool(id) {
     b.classList.toggle("active", b.dataset.tool === id),
   );
   $("#tool-hint").innerHTML =
-    `${icon(t.icon)}<span>${t.hint}</span>${id === "plant" ? '<kbd>R</kbd><span class="hint-rotate">to rotate</span>' : ""}`;
+    localizeHTML(`${icon(t.icon)}<span>${t.hint}</span>${id === "plant" ? '<kbd>R</kbd><span class="hint-rotate">to rotate</span>' : ""}`);
   $("#shape-tray").classList.toggle("hidden", id !== "shape");
   $("#mobile-action").innerHTML =
-    `${icon(t.icon)}<span>${id === "plant" ? "Plant here" : t.name}</span>`;
+    localizeHTML(`${icon(t.icon)}<span>${id === "plant" ? "Plant here" : t.name}</span>`);
   if (panel === "tools") renderInventory();
 }
 function tutorial() {
@@ -218,7 +224,7 @@ function tutorial() {
       button: "Pick up the watering can",
     },
   ][t];
-  el.innerHTML = `<button class="tutorial-close" id="dismiss-tutorial" aria-label="Dismiss tutorial">${icon("close")}</button><span class="eyebrow">${content.eyebrow}</span><h3>${content.title}</h3><p>${content.text}</p><div class="tutorial-bottom"><button class="text-button" id="tutorial-next">${content.button} ${icon("arrow")}</button><span class="tutorial-dots">${[1, 2, 3].map((n) => `<i class="${t === n ? "active" : ""}"></i>`).join("")}</span></div>`;
+  el.innerHTML = localizeHTML(`<button class="tutorial-close" id="dismiss-tutorial" aria-label="Dismiss tutorial">${icon("close")}</button><span class="eyebrow">${content.eyebrow}</span><h3>${content.title}</h3><p>${content.text}</p><div class="tutorial-bottom"><button class="text-button" id="tutorial-next">${content.button} ${icon("arrow")}</button><span class="tutorial-dots">${[1, 2, 3].map((n) => `<i class="${t === n ? "active" : ""}"></i>`).join("")}</span></div>`);
   $("#tutorial-next").onclick = () => {
     if (t === 0) {
       state.tutorial = 1;
@@ -247,7 +253,7 @@ function selectedCard(entity) {
   el.classList.toggle("hidden", !entity);
   if (!entity) return;
   const p = byId(entity.type);
-  el.innerHTML = `<button class="selection-close icon-button" aria-label="Close selection">${icon("close")}</button><img src="${thumbnail(p.id)}" alt=""/><div class="selected-info"><span class="eyebrow">${p.category || "GARDEN DECOR"}</span><strong>${p.name}</strong><span>${p.category ? `${stage(entity.growth)} <i>·</i> ${Math.round(entity.growth * 100)}% grown` : "A little finishing touch"}</span>${p.category ? `<div class="water-meter" title="Hydration ${Math.round(entity.water * 100)}%">${icon("water")}<div><i style="width:${entity.water * 100}%"></i></div><small>${Math.round(entity.water * 100)}%</small></div>` : ""}</div><div class="selected-actions"><button data-selection="water" aria-label="Water selected plant" title="Water">${icon("water")}</button><button data-selection="move" aria-label="Move selected object" title="Move">${icon("move")}</button><button data-selection="rotate" aria-label="Rotate selected object" title="Rotate">${icon("rotate")}</button><button data-selection="copy" aria-label="Copy selected object" title="Copy">${icon("plus")}</button></div>`;
+  el.innerHTML = localizeHTML(`<button class="selection-close icon-button" aria-label="Close selection">${icon("close")}</button><img src="${thumbnail(p.id)}" alt=""/><div class="selected-info"><span class="eyebrow">${p.category || "GARDEN DECOR"}</span><strong>${p.name}</strong><span>${p.category ? `${stage(entity.growth)} <i>·</i> ${Math.round(entity.growth * 100)}% grown` : "A little finishing touch"}</span>${p.category ? `<div class="water-meter" title="Hydration ${Math.round(entity.water * 100)}%">${icon("water")}<div><i style="width:${entity.water * 100}%"></i></div><small>${Math.round(entity.water * 100)}%</small></div>` : ""}</div><div class="selected-actions"><button data-selection="water" aria-label="Water selected plant" title="Water">${icon("water")}</button><button data-selection="move" aria-label="Move selected object" title="Move">${icon("move")}</button><button data-selection="rotate" aria-label="Rotate selected object" title="Rotate">${icon("rotate")}</button><button data-selection="copy" aria-label="Copy selected object" title="Copy">${icon("plus")}</button></div>`);
   $(".selection-close", el).onclick = () => game.select(null);
   $$("[data-selection]", el).forEach(
     (b) =>
@@ -333,10 +339,10 @@ function drawMap(canvas, range = 25) {
   }
   ctx.fillStyle = "#66835b";
   ctx.font = "bold 13px sans-serif";
-  ctx.fillText("N", w - 20, 20);
+  ctx.fillText(getLanguage() === "uz" ? "Sh" : "N", w - 20, 20);
 }
 function openModal(html) {
-  $("#modal-body").innerHTML = html;
+  $("#modal-body").innerHTML = localizeHTML(html);
   $("#modal").showModal();
   game.paused = true;
   game.onBlur();
@@ -347,14 +353,24 @@ function closeModal() {
 }
 function showHelp() {
   openModal(
-    `<div class="modal-emblem">${icon("sprout")}</div><span class="eyebrow">YOUR FIRST LITTLE STEPS</span><h2>A garden of your own.</h2><p>Everything here grows at your pace. Start small. Make it yours.</p><div class="help-steps"><div><b>01</b><span><strong>Pick something you love.</strong>Choose a plant or decoration from the collection.</span></div><div><b>02</b><span><strong>Put down roots.</strong>Click the grass to place it. A green preview means there’s room.</span></div><div><b>03</b><span><strong>Give it a little care.</strong>Water plants, sculpt shrubs, and watch your garden grow.</span></div></div><div class="keyboard-guide"><span><kbd>W A S D</kbd> Move</span><span><kbd>Shift</kbd> Move faster</span><span><kbd>1–8</kbd> Tools</span><span><kbd>R</kbd> Rotate</span><span><kbd>C</kbd> Camera</span><span><kbd>E</kbd> Center action</span><span><kbd>Ctrl Z</kbd> Undo</span><span><kbd>Esc</kbd> Cancel move</span></div><p class="help-small">Drag to orbit. Right-drag to pan. Scroll to zoom.<br>On mobile: drag to look, pinch to zoom, use the joystick to move, and tap the grass to plant.</p><button class="button primary full" id="help-done">Let’s grow ${icon("arrow")}</button>`,
+    `<div class="modal-emblem">${icon("sprout")}</div><span class="eyebrow">YOUR FIRST LITTLE STEPS</span><h2>A garden of your own.</h2><p>Everything here grows at your pace. Start small. Make it yours.</p><div class="help-steps"><div><b>01</b><span><strong>Pick something you love.</strong>Choose a plant or decoration from the collection.</span></div><div><b>02</b><span><strong>Put down roots.</strong>Click the grass to place it. A green preview means there’s room.</span></div><div><b>03</b><span><strong>Give it a little care.</strong>Water plants, sculpt shrubs, and watch your garden grow.</span></div></div><div class="keyboard-guide"><span><kbd>W A S D</kbd> Walk</span><span><kbd>Shift</kbd> Move faster</span><span><kbd>1–8</kbd> Tools</span><span><kbd>R</kbd> Rotate</span><span><kbd>C</kbd> Camera</span><span><kbd>E</kbd> Center action</span><span><kbd>Ctrl Z</kbd> Undo</span><span><kbd>Esc</kbd> Cancel move</span></div><p class="help-small">Drag to orbit. Right-drag to pan. Scroll to zoom.<br>On mobile: drag to look, pinch to zoom, use the joystick to move, and tap the grass to plant.</p><button class="button primary full" id="help-done">Let’s grow ${icon("arrow")}</button>`,
   );
   $("#help-done").onclick = closeModal;
 }
 function showSettings() {
   openModal(
-    `<span class="eyebrow">MAKE YOURSELF COMFORTABLE</span><h2>Your kind of calm.</h2><p>A few little adjustments for your happy place.</p><div class="settings-list"><label><span><strong>Graphics quality</strong><small>Auto adapts to your device.</small></span><select id="quality-select"><option value="auto">Automatic</option><option value="high">High detail</option><option value="low">Smooth & simple</option></select></label><label><span><strong>Garden sounds</strong><small>Birdsong, water, wind & gentle melodies.</small></span><input class="switch" type="checkbox" id="sound-setting" ${state.settings.sound ? "checked" : ""}/></label><label><span><strong>A little quieter?</strong><small>Ambient volume</small></span><input id="volume-setting" type="range" min="0" max="1" step=".05" value="${state.settings.volume}"/></label><label><span><strong>Let the days drift by</strong><small>Automatic day and night cycle.</small></span><input class="switch" id="cycle-setting" type="checkbox" ${state.settings.dayCycle ? "checked" : ""}/></label><label><span><strong>Time of day</strong><small id="time-setting-label">${formatTime(state.clock)}</small></span><input type="range" id="day-setting" min="0" max="23.9" step=".1" value="${state.clock}"/></label><label><span><strong>Growing at your pace</strong><small>Growth & time speed</small></span><select id="speed-setting">${[1, 2, 5, 10].map((n) => `<option value="${n}" ${n === state.speed ? "selected" : ""}>${n}× ${n === 1 ? "Normal" : n === 10 ? "Maximum" : "Faster"}</option>`).join("")}</select></label></div><div class="backup-actions"><button class="button" id="export-button">${icon("download")} Export garden</button><button class="button" id="import-button">${icon("upload")} Import garden</button></div><p class="local-note">Your garden is saved in this browser on this device. Export a file to keep a backup or move to another device.</p><button class="text-button danger" id="reset-button">Start a fresh garden</button>`,
+    `<span class="eyebrow">MAKE YOURSELF COMFORTABLE</span><h2>Your kind of calm.</h2><p>A few little adjustments for your happy place.</p><div class="settings-list"><label><span><strong>Language</strong><small>Choose your language.</small></span><select id="language-select" aria-label="Language"><option value="uz" lang="uz">O‘zbekcha</option><option value="en" lang="en">English</option></select></label><label><span><strong>Graphics quality</strong><small>Sharper images and soft shadows on phones. Ultra suits powerful devices.</small></span><select id="quality-select"><option value="auto">Automatic</option><option value="balanced">Balanced</option><option value="high">High detail</option><option value="ultra">Ultra detail</option><option value="low">Smooth & simple</option></select></label><label><span><strong>Garden sounds</strong><small>Birdsong, water, wind & gentle melodies.</small></span><input class="switch" type="checkbox" id="sound-setting" ${state.settings.sound ? "checked" : ""}/></label><label><span><strong>A little quieter?</strong><small>Ambient volume</small></span><input id="volume-setting" type="range" min="0" max="1" step=".05" value="${state.settings.volume}"/></label><label><span><strong>Let the days drift by</strong><small>Automatic day and night cycle.</small></span><input class="switch" id="cycle-setting" type="checkbox" ${state.settings.dayCycle ? "checked" : ""}/></label><label><span><strong>Time of day</strong><small id="time-setting-label">${formatTime(state.clock)}</small></span><input type="range" id="day-setting" min="0" max="23.9" step=".1" value="${state.clock}"/></label><label><span><strong>Growing at your pace</strong><small>Growth & time speed</small></span><select id="speed-setting">${[1, 2, 5, 10].map((n) => `<option value="${n}" ${n === state.speed ? "selected" : ""}>${n}× ${n === 1 ? "Normal" : n === 10 ? "Maximum" : "Faster"}</option>`).join("")}</select></label></div><div class="backup-actions"><button class="button" id="export-button">${icon("download")} Export garden</button><button class="button" id="import-button">${icon("upload")} Import garden</button></div><p class="local-note">Your garden is saved in this browser on this device. Export a file to keep a backup or move to another device.</p><button class="text-button danger" id="reset-button">Start a fresh garden</button>`,
   );
+  $("#language-select").value = state.settings.language;
+  $("#language-select").onchange = (e) => {
+    const previous = state.settings.language;
+    state.settings.language = e.target.value;
+    if (save()) location.reload();
+    else {
+      state.settings.language = previous;
+      e.target.value = previous;
+    }
+  };
   $("#quality-select").value = state.settings.quality;
   $("#quality-select").onchange = (e) => game.setQuality(e.target.value);
   $("#sound-setting").onchange = (e) => setSound(e.target.checked);
@@ -370,13 +386,13 @@ function showSettings() {
   };
   $("#day-setting").oninput = (e) => {
     state.clock = +e.target.value;
-    $("#time-setting-label").textContent = formatTime(state.clock);
+    $("#time-setting-label").textContent = t(formatTime(state.clock));
     updateClock();
     scheduleSave();
   };
   $("#speed-setting").onchange = (e) => {
     state.speed = +e.target.value;
-    $("#time-button").textContent = `${state.speed}×`;
+    $("#time-button").textContent = t(`${state.speed}×`);
     scheduleSave();
   };
   $("#export-button").onclick = exportGarden;
@@ -388,6 +404,7 @@ function showSettings() {
       () => {
         try {
           const fresh = starterGarden();
+          fresh.settings.language = state.settings.language;
           replaceGarden(fresh);
         } catch {
           toast(
@@ -400,7 +417,7 @@ function showSettings() {
 }
 function openConfirm(title, description, action) {
   $("#modal-body").innerHTML =
-    `<span class="eyebrow">A NEW BEGINNING</span><h2>${title}</h2><p>${description}</p><div class="backup-actions"><button class="button" id="confirm-cancel">Keep my garden</button><button class="button primary" id="confirm-action">Start fresh ${icon("sprout")}</button></div>`;
+    localizeHTML(`<span class="eyebrow">A NEW BEGINNING</span><h2>${title}</h2><p>${description}</p><div class="backup-actions"><button class="button" id="confirm-cancel">Keep my garden</button><button class="button primary" id="confirm-action">Start fresh ${icon("sprout")}</button></div>`);
   $("#confirm-cancel").onclick = showSettings;
   $("#confirm-action").onclick = action;
 }
@@ -436,7 +453,7 @@ function showMenu() {
   $("#menu-settings").onclick = showSettings;
   $("#menu-garden").insertAdjacentHTML(
     "afterend",
-    `<button class="button" id="menu-explore">${icon("globe")} Explore the world</button>`,
+    localizeHTML(`<button class="button" id="menu-explore">${icon("globe")} Explore the world</button>`),
   );
   $("#menu-explore").onclick = showWorld;
 }
@@ -484,25 +501,25 @@ function formatTime(hour) {
 }
 function updateClock() {
   const h = state.clock;
-  $("#clock").textContent = formatTime(h);
-  $("#time-button").textContent = `${state.speed}×`;
+  $("#clock").textContent = t(formatTime(h));
+  $("#time-button").textContent = t(`${state.speed}×`);
   $("#weather-label").textContent =
-    h < 6 || h >= 20
+    t(h < 6 || h >= 20
       ? "A peaceful evening"
       : h < 12
         ? "A lovely morning"
         : h < 17
           ? "A golden afternoon"
-          : "A softer kind of light";
+          : "A softer kind of light");
   $("#weather-period").textContent =
-    h < 6 || h >= 20
+    t(h < 6 || h >= 20
       ? "Under the stars"
       : h < 12
         ? "A fresh start"
         : h < 17
           ? "Room to grow"
-          : "The golden hour";
-  $(".weather-icon").innerHTML = icon(h < 6 || h >= 20 ? "moon" : "sun");
+          : "The golden hour");
+  $(".weather-icon").innerHTML = localizeHTML(icon(h < 6 || h >= 20 ? "moon" : "sun"));
 }
 async function setSound(on) {
   state.settings.sound = on;
@@ -513,7 +530,7 @@ async function setSound(on) {
     toast("Sound is unavailable in this browser.");
   }
   $("#sound-button").innerHTML =
-    `${icon(state.settings.sound ? "volume" : "mute")}<span>Garden sounds <b>${state.settings.sound ? "on" : "off"}</b></span>`;
+    localizeHTML(`${icon(state.settings.sound ? "volume" : "mute")}<span>Garden sounds <b>${state.settings.sound ? "on" : "off"}</b></span>`);
   scheduleSave();
 }
 function bindUI() {
@@ -631,7 +648,7 @@ function bindUI() {
       const imported = validateSave(JSON.parse(await file.text()));
       replaceGarden(imported);
     } catch (error) {
-      toast(error.message || "That garden file could not be opened.");
+      toast(error instanceof SyntaxError ? "That garden file could not be opened." : error.message || "That garden file could not be opened.");
     }
     e.target.value = "";
   };
@@ -706,29 +723,29 @@ async function boot() {
     });
     game.addEventListener("camera", (e) => {
       document.body.classList.toggle("walking", e.detail === "walk");
-      $("#camera-button").innerHTML = icon(
+      $("#camera-button").innerHTML = localizeHTML(icon(
         e.detail === "walk" ? "walk" : "camera",
-      );
+      ));
     });
     document.body.classList.toggle("walking", game.mode === "walk");
-    $("#camera-button").innerHTML = icon(
+    $("#camera-button").innerHTML = localizeHTML(icon(
       game.mode === "walk" ? "walk" : "camera",
-    );
+    ));
     game.addEventListener("tick", (e) => {
       updateClock();
       $("#plant-count").textContent =
-        `${e.detail.plants} plants, endless possibilities`;
+        t(`${e.detail.plants} plants, endless possibilities`);
       drawMap($("#minimap"));
       if (game.selected) {
         const entity = game.selected;
         const label = $(".selected-info > span:not(.eyebrow)");
         if (label && byId(entity.type).category) {
-          label.textContent = `${stage(entity.growth)} · ${Math.round(entity.growth * 100)}% grown`;
+          label.textContent = t(`${stage(entity.growth)} · ${Math.round(entity.growth * 100)}% grown`);
           const bar = $(".water-meter > div > i");
           const percent = $(".water-meter small");
           if (bar) bar.style.width = `${entity.water * 100}%`;
           if (percent)
-            percent.textContent = `${Math.round(entity.water * 100)}%`;
+            percent.textContent = t(`${Math.round(entity.water * 100)}%`);
         }
       }
     });
@@ -744,7 +761,7 @@ async function boot() {
   } catch (error) {
     console.error(error);
     $("#loading").innerHTML =
-      `${icon("info")}<strong>Your garden needs WebGL.</strong><span>Try a recent Chrome, Safari, Firefox, or Edge browser with hardware acceleration enabled.</span><button class="button" onclick="location.reload()">Try again</button>`;
+      localizeHTML(`${icon("info")}<strong>Your garden needs WebGL.</strong><span>Try a recent Chrome, Safari, Firefox, or Edge browser with hardware acceleration enabled.</span><button class="button" onclick="location.reload()">Try again</button>`);
   }
 }
 requestAnimationFrame(boot);
