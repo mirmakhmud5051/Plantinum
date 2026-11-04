@@ -1,22 +1,8 @@
-# PLANTINUM 🌱
+0-# PLANTINUM 🌱
 
 Brauzerda ishlaydigan, tabiiy barglar va yumaloq butalardan iborat interaktiv 3D bog‘dorchilik o‘yini. `images/` papkasidagi namuna asosida egri barglar, yaxlit daraxt tojlari, teksturali maysa va notekis tosh yo‘laklar yaratilgan. O‘yin inson ko‘zi balandligida — **1.68 m** dan boshlanadi. Three.js, JavaScript va Vite asosida yozilgan; modellar kod orqali yaratiladi, pullik assetlar va backend talab qilinmaydi.
 
-## Ishga tushirish
 
-Node.js **20.19+ yoki 22.12+** kerak. Loyiha papkasida:
-
-```sh
-npm install
-npm run dev
-```
-
-Brauzerda terminal ko‘rsatgan manzilni oching, odatda **http://localhost:5173**. Agar PowerShell `npm.ps1` bajarilishini cheklasa, `npm` o‘rniga `npm.cmd` yozing:
-
-```powershell
-npm.cmd install
-npm.cmd run dev
-```
 
 Telefon yoki planshetni kompyuter bilan bir Wi-Fi tarmog‘iga ulang va terminaldagi **Network** manzilini telefon brauzerida oching. Kompyuterning mahalliy tarmoq uchun serverga kirishiga ruxsat bo‘lishi kerak. Joylashtirilgan saytga kiruvchi o‘yinchilarga Node.js yoki ilova o‘rnatish kerak emas.
 
@@ -95,11 +81,6 @@ Aniqlik qurilmaning pixel ratio qiymatidan oshmaydi. Qirralarni silliqlash barch
 
 ## Production va tekshiruv
 
-```sh
-npm test
-npm run build
-npm run preview -- --port 5199 --strictPort
-```
 
 Production fayllari `dist/` ichida. Shu papkani istalgan statik HTTPS hostingga joylashtirish mumkin. O‘yinni `file://` bilan ochmang; HTTP server kerak.
 
