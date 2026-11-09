@@ -12,7 +12,8 @@
     "test:lifecycle": "node tests/lifecycle.mjs",
     "test:preferences": "node tests/preferences.mjs",
     "test:landscape": "node tests/landscape.mjs",
-    "test:natural": "node tests/natural.mjs"
+    "test:natural": "node tests/natural.mjs",
+    "test:plants": "node tests/plant-reference.mjs"
   },
   "keywords": [],
   "author": "",
